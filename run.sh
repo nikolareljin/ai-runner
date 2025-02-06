@@ -74,8 +74,15 @@ fi
 # Use jq to parse the json file and display the options in dialog.
 # Provide the details in the options: name, parameters, memory.
 # Store the selected model in a variable ${selected_model}.
-options=$(jq -r '.models[] | "\(.name) \(.parameters) \(.memory)"' models.json)
-selected_model=$(echo "$options" | dialog --menu "Select a model to download" 15 40 5 3>&1 1>&2 2>&3)
+options=$(jq -r '.models[] | "\(.runnable) \(.name) \(.parameters) \(.memory)"' models.json)
+menu_items=()
+while IFS= read -r line; do
+    key=$(echo "$line" | awk '{print $1}')
+    value=$(echo "$line" | awk '{$1=""; print $0}')
+    menu_items+=("$key" "$value")
+done <<< "$options"
+
+selected_model=$(dialog --menu "Select a model to download" 20 50 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
 
 # Create the prompt using dialog and send the curl request
 if [[ 1 != ${run_prompt} ]]; then
