@@ -60,15 +60,7 @@ if [[ 1 == ${run_install} ]]; then
     fi
 fi
 
-# # Download default model
-# ollama pull ${DEFAULT_MODEL}
-# ollama run ${DEFAULT_MODEL}
-
-# # Get available list of models from ollama and pull them. Display options with dialog cli tool and allow them be downloaded.
-# # List remote models from ollama and display available options for download
-# available_models=$(curl -s http://localhost:11434/api/models | jq -r '.models[] | .name')
-# selected_model=$(echo "$available_models" | dialog --menu "Select a model to download" 15 40 5 3>&1 1>&2 2>&3)
-
+# TODO: implement pulling of avaialble models from Ollama website. Store this into models.json file.
 
 # Process all the models from models.json file and display them as options in the Dialog. 
 # Use jq to parse the json file and display the options in dialog.
@@ -88,9 +80,6 @@ selected_model=$(dialog --menu "Select a model to download" 20 50 5 "${menu_item
 if [[ 1 != ${run_prompt} ]]; then
     dialog --inputbox "Enter a prompt" 10 40 2> /tmp/prompt.txt
     prompt=$(cat /tmp/prompt.txt)
-
-    # make CURL request
-    # curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"llama3\",  \"prompt\":\"${prompt}\", \"stream\": false}"
 fi
 
 # If empty prompt, exit
@@ -107,7 +96,7 @@ else
     # Pull the selected model
     ollama pull "$selected_model"
 
-    # Pull llama3
+    # Pull the model
     ollama pull ${selected_model}
     ollama run ${selected_model}
 fi

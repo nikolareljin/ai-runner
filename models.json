@@ -1,257 +1,104 @@
 {
     "models": [
         {
-            "name": "llama3",
-            "type": "llama",
-            "age": 3,
-            "color": "brown",
-            "arch": "llama3-arch",
-            "parameters": "10B",
-            "quantization": "Q4_K_M",
-            "memory": "8.0GB",
-            "runnable": "llama3-r1:123a"
-        },
-        {
             "name": "llama2",
             "type": "llama",
-            "age": 2,
-            "color": "white",
-            "arch": "llama2-arch",
-            "parameters": "8B",
+            "parameters": "7B",
+            "description": "Meta's Llama 2 model",
+            "arch": "llama2",
             "quantization": "Q4_K_M",
-            "memory": "6.0GB",
-            "runnable": "llama2-r1:456b"
+            "memory": "5GB",
+            "runnable": "llama2:latest"
         },
         {
-            "name": "llama1",
+            "name": "mistral",
+            "type": "AI",
+            "parameters": "7B",
+            "description": "Mistral AI's model",
+            "arch": "mistral",
+            "quantization": "Q4_K_M",
+            "memory": "4.8GB",
+            "runnable": "mistral:latest"
+        },
+        {
+            "name": "dolphin-phi",
+            "type": "AI",
+            "parameters": "2.7B",
+            "description": "Phi-2 based model",
+            "arch": "phi",
+            "quantization": "Q4_K_M",
+            "memory": "2.5GB",
+            "runnable": "dolphin-phi:latest"
+        },
+        {
+            "name": "neural-chat",
+            "type": "AI",
+            "parameters": "7B",
+            "description": "Intel's neural chat model",
+            "arch": "neural",
+            "quantization": "Q4_K_M",
+            "memory": "4.8GB",
+            "runnable": "neural-chat:latest"
+        },
+        {
+            "name": "deepseek-coder",
+            "type": "AI",
+            "parameters": "6.7B",
+            "description": "Coding specialized model",
+            "arch": "deepseek",
+            "quantization": "Q4_K_M",
+            "memory": "4.5GB",
+            "runnable": "deepseek-coder:latest"
+        },
+        {
+            "name": "codellama",
             "type": "llama",
-            "age": 1,
-            "color": "black",
-            "arch": "llama1-arch",
-            "parameters": "6B",
+            "parameters": "7B",
+            "description": "Meta's Code Llama model",
+            "arch": "codellama",
             "quantization": "Q4_K_M",
-            "memory": "4.0GB",
-            "runnable": "llama1-r1:789c"
+            "memory": "4.8GB",
+            "runnable": "codellama:latest"
         },
         {
-            "name": "Claude",
+            "name": "phi",
             "type": "AI",
-            "age": 1,
-            "color": "blue",
-            "arch": "claude-arch",
-            "parameters": "12B",
+            "parameters": "2.7B",
+            "description": "Microsoft's Phi-2 model",
+            "arch": "phi",
             "quantization": "Q4_K_M",
-            "memory": "10.0GB",
-            "runnable": "claude-r1:101d"
+            "memory": "2.5GB",
+            "runnable": "phi:latest"
         },
         {
-            "name": "Swan",
+            "name": "qwen",
             "type": "AI",
-            "age": 2,
-            "color": "white",
-            "arch": "swan-arch",
-            "parameters": "14B",
+            "parameters": "7B",
+            "description": "Qwen model by Alibaba",
+            "arch": "qwen",
             "quantization": "Q4_K_M",
-            "memory": "12.0GB",
-            "runnable": "swan-r1:202e"
+            "memory": "5GB",
+            "runnable": "qwen:latest"
         },
         {
-            "name": "DeepSeek",
+            "name": "falcon",
             "type": "AI",
-            "age": 3,
-            "color": "gray",
-            "arch": "deepseek-arch",
-            "parameters": "14.8B",
+            "parameters": "7B",
+            "description": "TII's Falcon model",
+            "arch": "falcon",
             "quantization": "Q4_K_M",
-            "memory": "9.0GB",
-            "runnable": "deepseek-r1:671b"
+            "memory": "4.8GB",
+            "runnable": "falcon:latest"
         },
         {
-            "name": "Ollama1",
+            "name": "stable-beluga",
             "type": "AI",
-            "age": 1,
-            "color": "navy",
-            "arch": "ollama1-arch",
-            "parameters": "5B",
+            "parameters": "7B",
+            "description": "Stable Beluga model",
+            "arch": "llama",
             "quantization": "Q4_K_M",
-            "memory": "4.0GB",
-            "runnable": "ollama1-r1:606r"
-        },
-        {
-            "name": "Ollama2",
-            "type": "AI",
-            "age": 2,
-            "color": "maroon",
-            "arch": "ollama2-arch",
-            "parameters": "10B",
-            "quantization": "Q4_K_M",
-            "memory": "8.0GB",
-            "runnable": "ollama2-r1:707s"
-        },
-        {
-            "name": "Ollama3",
-            "type": "AI",
-            "age": 3,
-            "color": "olive",
-            "arch": "ollama3-arch",
-            "parameters": "15B",
-            "quantization": "Q4_K_M",
-            "memory": "12.0GB",
-            "runnable": "ollama3-r1:808t"
-        },
-        {
-            "name": "Ollama4",
-            "type": "AI",
-            "age": 4,
-            "color": "lime",
-            "arch": "ollama4-arch",
-            "parameters": "20B",
-            "quantization": "Q4_K_M",
-            "memory": "16.0GB",
-            "runnable": "ollama4-r1:909u"
-        },
-        {
-            "name": "Qwen2",
-            "type": "AI",
-            "age": 2,
-            "color": "green",
-            "arch": "qwen2-arch",
-            "parameters": "14.8B",
-            "quantization": "Q4_K_M",
-            "memory": "9.0GB",
-            "runnable": "qwen2-r1:671b"
-        },
-        {
-            "name": "Falcon",
-            "type": "AI",
-            "age": 4,
-            "color": "red",
-            "arch": "falcon-arch",
-            "parameters": "20B",
-            "quantization": "Q4_K_M",
-            "memory": "15.0GB",
-            "runnable": "falcon-r1:303f"
-        },
-        {
-            "name": "Phoenix",
-            "type": "AI",
-            "age": 5,
-            "color": "orange",
-            "arch": "phoenix-arch",
-            "parameters": "25B",
-            "quantization": "Q4_K_M",
-            "memory": "20.0GB",
-            "runnable": "phoenix-r1:404g"
-        },
-        {
-            "name": "Griffin",
-            "type": "AI",
-            "age": 3,
-            "color": "yellow",
-            "arch": "griffin-arch",
-            "parameters": "18B",
-            "quantization": "Q4_K_M",
-            "memory": "12.0GB",
-            "runnable": "griffin-r1:505h"
-        },
-        {
-            "name": "Phi4",
-            "type": "AI",
-            "age": 4,
-            "color": "purple",
-            "arch": "phi4-arch",
-            "parameters": "14B",
-            "quantization": "Q4_K_M",
-            "memory": "11.0GB",
-            "runnable": "phi4-r1:606i"
-        },
-        {
-            "name": "Phi3",
-            "type": "AI",
-            "age": 3,
-            "color": "violet",
-            "arch": "phi3-arch",
-            "parameters": "12B",
-            "quantization": "Q4_K_M",
-            "memory": "10.0GB",
-            "runnable": "phi3-r1:707j"
-        },
-        {
-            "name": "Phi2",
-            "type": "AI",
-            "age": 2,
-            "color": "indigo",
-            "arch": "phi2-arch",
-            "parameters": "10B",
-            "quantization": "Q4_K_M",
-            "memory": "8.0GB",
-            "runnable": "phi2-r1:808k"
-        },
-        {
-            "name": "Phi1",
-            "type": "AI",
-            "age": 1,
-            "color": "blue",
-            "arch": "phi1-arch",
-            "parameters": "8B",
-            "quantization": "Q4_K_M",
-            "memory": "6.0GB",
-            "runnable": "phi1-r1:909l"
-        },
-        {
-            "name": "Mistral",
-            "type": "AI",
-            "age": 3,
-            "color": "cyan",
-            "arch": "mistral-arch",
-            "parameters": "16B",
-            "quantization": "Q4_K_M",
-            "memory": "12.0GB",
-            "runnable": "mistral-r1:101m"
-        },
-        {
-            "name": "DeepSeek Coder",
-            "type": "AI",
-            "age": 2,
-            "color": "teal",
-            "arch": "deepseek-coder-arch",
-            "parameters": "20B",
-            "quantization": "Q4_K_M",
-            "memory": "15.0GB",
-            "runnable": "deepseek-coder-r1:202n"
-        },
-        {
-            "name": "MiniLlama",
-            "type": "AI",
-            "age": 1,
-            "color": "pink",
-            "arch": "minillama-arch",
-            "parameters": "2B",
-            "quantization": "Q4_K_M",
-            "memory": "2.0GB",
-            "runnable": "minillama-r1:303o"
-        },
-        {
-            "name": "TinyClaude",
-            "type": "AI",
-            "age": 1,
-            "color": "lightblue",
-            "arch": "tinyclaude-arch",
-            "parameters": "1.5B",
-            "quantization": "Q4_K_M",
-            "memory": "1.5GB",
-            "runnable": "tinyclaude-r1:404p"
-        },
-        {
-            "name": "NanoSwan",
-            "type": "AI",
-            "age": 1,
-            "color": "lightgreen",
-            "arch": "nanoswan-arch",
-            "parameters": "1B",
-            "quantization": "Q4_K_M",
-            "memory": "1.0GB",
-            "runnable": "nanoswan-r1:505q"
+            "memory": "4.8GB",
+            "runnable": "stable-beluga:latest"
         }
     ]
 }
