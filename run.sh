@@ -7,7 +7,11 @@ DEFAULT_MODEL="llama3"
 # -m <model>        : run specific model
 # -p <prompt>       : prompt to use 
 
+# Specs for dialog.
+DIALOG_WIDTH=60
+DIALOG_HEIGHT=20
 
+# Run parameters.
 run_install=0
 run_model=0
 run_prompt=0
@@ -31,7 +35,6 @@ while getopts "im:p:" opt; do
             ;;
     esac
 done
-
 
 # Install llama and its dependencies
 if [[ 1 == ${run_install} ]]; then
@@ -74,11 +77,11 @@ while IFS= read -r line; do
     menu_items+=("$key" "$value")
 done <<< "$options"
 
-selected_model=$(dialog --menu "Select a model to download" 20 50 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
+selected_model=$(dialog --menu "Select a model to download" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
 
 # Create the prompt using dialog and send the curl request
 if [[ 1 != ${run_prompt} ]]; then
-    dialog --inputbox "Enter a prompt" 10 40 2> /tmp/prompt.txt
+    dialog --inputbox "Enter a prompt" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 2> /tmp/prompt.txt
     prompt=$(cat /tmp/prompt.txt)
 fi
 
@@ -102,7 +105,7 @@ else
 fi
 
 # make CURL request
-curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"llama3\",  \"prompt\":\"${prompt}\", \"stream\": false}"
+curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"${selected_model}\",  \"prompt\":\"${prompt}\", \"stream\": false}"
 
 # Grab the results
 
