@@ -61,24 +61,128 @@ if [[ 1 == ${run_install} ]]; then
         echo "Llama is not installed. Installing..."
         curl -fsSL https://ollama.com/install.sh | sh
     fi
+
+    # check if "ollama-get-models" directory is not present.
+    # If so, clone the repository.
+    if [ ! -d "ollama-get-models" ]; then
+        echo "ollama-get-models directory not found. Cloning..."
+        git clone git@github.com:webfarmer/ollama-get-models.git
+        # GH CLI: gh repo clone webfarmer/ollama-get-models
+
+        # Now, scrape the models from the website and store them in models.json file.
+        # Check if jq is installed
+        cd ollama-get-models
+        # Run the python script to scrape the models
+        if ! [ -x "$(command -v python3)" ]; then
+            echo "Python3 is not installed. Installing..."
+            sudo apt-get install -y python3
+        fi
+        if ! [ -x "$(command -v pip3)" ]; then
+            echo "pip3 is not installed. Installing..."
+            sudo apt-get install -y python3-pip
+        fi
+        # Now pull the models from the website and store them in models.json file.
+        python3 get_ollama_models.py
+        # Check if the ./code/ollama_models.json file exists
+        if [ -f "./code/ollama_models.json" ]; then
+            echo "Models file found."
+        else
+            echo "Models file not found. Exiting..."
+            exit 1
+        fi
+    fi
+fi
+
+# Check if .env file exists
+if [ ! -f ".env" ]; then
+    echo "No .env file found. Creating..."
+    cp .env.example.txt .env
 fi
 
 # TODO: implement pulling of avaialble models from Ollama website. Store this into models.json file.
+
+MODEL_FILE="./ollama-get-models/code/ollama_models.json"
+if [ ! -f "$MODEL_FILE" ]; then
+    echo "No models.json file found. Exiting..."
+    exit 1
+fi
 
 # Process all the models from models.json file and display them as options in the Dialog. 
 # Use jq to parse the json file and display the options in dialog.
 # Provide the details in the options: name, parameters, memory.
 # Store the selected model in a variable ${selected_model}.
-options=$(jq -r '.models[] | "\(.runnable) \(.name) \(.parameters) \(.memory)"' models.json)
+# options=$(jq -r '.models[] | "\(.runnable) \(.name) \(.parameters) \(.memory)"' models.json)
+# menu_items=()
+# while IFS= read -r line; do
+#     key=$(echo "$line" | awk '{print $1}')
+#     value=$(echo "$line" | awk '{$1=""; print $0}')
+#     menu_items+=("$key" "$value")
+# done <<< "$options"
+
+source .env
+
+options=$(jq -r '.[] | "\(.name) \(.parameters) \(.sizes)"' ${MODEL_FILE})
 menu_items=()
+
+# ----------------- MODEL -----------------
+# selected_model=$(dialog --menu "Select a model to download" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
+current_model=$(grep -oP '^model=\K.*' .env)
 while IFS= read -r line; do
     key=$(echo "$line" | awk '{print $1}')
     value=$(echo "$line" | awk '{$1=""; print $0}')
     menu_items+=("$key" "$value")
+    # Preselect the current model if it matches
+    if [[ "$key" == "$current_model" ]]; then
+        preselected_model="$key"
+    fi
 done <<< "$options"
 
-selected_model=$(dialog --menu "Select a model to download" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
+selected_model=$(dialog --menu "Select a model to download" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" --default-item "${preselected_model}" 3>&1 1>&2 2>&3)
 
+# Put selected_model into .env file.
+if [ -n "$selected_model" ]; then
+    echo "Selected model: $selected_model"
+    # Check if the selected model is already in the .env file
+    if grep -q "model=" .env; then
+        # If it is, replace it
+        sed -i "s/model=.*/model=${selected_model}/" .env
+    else
+        # If not, add it to the end of the file
+        echo "model=${selected_model}" >> .env
+    fi
+else
+    echo "No model selected. Exiting..."
+    exit 1
+fi
+
+# ----------------- SIZE -----------------
+# Select the Size of the model (using the $MODEL_FILE).
+selected_size=$(dialog --menu "Select a size for the model" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
+# Put selected_size into .env file.
+if [ -n "$selected_size" ]; then
+    echo "Selected size: $selected_size"
+    # Check if the selected size is already in the .env file
+    if grep -q "size=" .env; then
+        # If it is, replace it
+        sed -i "s/size=.*/size=${selected_size}/" .env
+    else
+        # If not, add it to the end of the file
+        echo "size=${selected_size}" >> .env
+    fi
+else
+    echo "No size selected. Exiting..."
+    exit 1
+fi
+# Check if the selected size is already in the .env file
+if grep -q "size=" .env; then
+    # If it is, replace it
+    sed -i "s/size=.*/size=${selected_size}/" .env
+else
+    # If not, add it to the end of the file
+    echo "size=${selected_size}" >> .env
+fi
+
+# ------------- PROMPT -----------------
 # Create the prompt using dialog and send the curl request
 if [[ 1 != ${run_prompt} ]]; then
     dialog --inputbox "Enter a prompt" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 2> /tmp/prompt.txt
@@ -91,19 +195,21 @@ if [[ -z "$prompt" ]]; then
     exit 1
 fi
 
+# ----------- RUN MODEL -----------------
+# Check if we have selected a model.
 if [[ -z "$selected_model" ]]; then
     echo "No model selected. Exiting..."
     exit 1
 
 else 
     # Pull the selected model
-    ollama pull "$selected_model"
+    ollama pull "$selected_model:latest"
 
-    # Pull the model
-    ollama pull ${selected_model}
+    # Run the selected model
     ollama run ${selected_model}
 fi
 
+# ---------- CURL request to endpoint -----------------
 # make CURL request
 curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"${selected_model}\",  \"prompt\":\"${prompt}\", \"stream\": false}"
 
