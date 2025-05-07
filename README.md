@@ -10,7 +10,7 @@ Models available at: https://ollama.com/search
 
 Run the command:
 
-`run.sh [-i] [-m <model>] [-p]`
+`./run [-i] [-m <model>] [-p]`
 
 Parameters: 
 
@@ -20,7 +20,7 @@ Parameters:
 
 
 ```sh
-./run.sh
+./run
 ```
 
 

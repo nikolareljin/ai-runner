@@ -131,6 +131,11 @@ if [ ! -f "$MODEL_FILE" ]; then
     exit 1
 fi
 
+# Re-format the model file - sort by model name.
+jq -S 'sort_by(.name)' ${MODEL_FILE} > ${MODEL_FILE}.tmp
+mv ${MODEL_FILE}.tmp ${MODEL_FILE}
+
+# OLD implementation: using manually entered models.json file.
 # Process all the models from models.json file and display them as options in the Dialog. 
 # Use jq to parse the json file and display the options in dialog.
 # Provide the details in the options: name, parameters, memory.
@@ -195,23 +200,29 @@ while IFS= read -r size; do
     menu_items+=("$size" "$size")
 done <<< "$sizes"
 
-# Display the sizes in a dialog menu
-selected_size=$(dialog --menu "Select a size for the model: ${selected_model}" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
-
-# Put selected_size into .env file
-if [ -n "$selected_size" ]; then
-    echo "Selected size: $selected_size"
-    # Check if the selected size is already in the .env file
-    if grep -q "size=" .env; then
-        # If it is, replace it
-        sed -i "s/size=.*/size=${selected_size}/" .env
-    else
-        # If not, add it to the end of the file
-        echo "size=${selected_size}" >> .env
-    fi
-else
-    echo "No size selected. Using :latest (default)."
+# in case current model has NULL (no sizes) in the json file, set default size to latest.
+if [[ -z "$sizes" ]] || [[ "null" == "$sizes" ]]; then
+    echo "No sizes found for the selected model. Using :latest (default)."
     selected_size="latest"
+else
+    # Display the sizes in a dialog menu
+    selected_size=$(dialog --menu "Select a size for the model: ${selected_model}" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
+
+    # Put selected_size into .env file
+    if [ -n "$selected_size" ]; then
+        echo "Selected size: $selected_size"
+        # Check if the selected size is already in the .env file
+        if grep -q "size=" .env; then
+            # If it is, replace it
+            sed -i "s/size=.*/size=${selected_size}/" .env
+        else
+            # If not, add it to the end of the file
+            echo "size=${selected_size}" >> .env
+        fi
+    else
+        echo "No size selected. Using :latest (default)."
+        selected_size="latest"
+    fi
 fi
 
 # Check if the selected size is already in the .env file
@@ -247,7 +258,7 @@ else
     ollama pull "$selected_model:$selected_size"
 
     # Run the selected model
-    ollama run ${selected_model}
+    ollama run ${selected_model}:$selected_size --prompt "$prompt" --stream false
 fi
 
 # ---------- CURL request to endpoint -----------------
@@ -259,7 +270,8 @@ curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"${selected_mo
 # Display the results with md format and show them
 
 # Clear old ollama models that are not being used or active.
-ollama prune
+ollama ps
+
 # Remove the temporary prompt file
 rm -f /tmp/prompt.txt
 
