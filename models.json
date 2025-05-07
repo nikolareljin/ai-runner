@@ -99,6 +99,56 @@
             "quantization": "Q4_K_M",
             "memory": "4.8GB",
             "runnable": "stable-beluga:latest"
+        },
+        {
+            "name": "gpt-4",
+            "type": "AI",
+            "parameters": "175B",
+            "description": "OpenAI's GPT-4 model",
+            "arch": "transformer",
+            "quantization": "FP16",
+            "memory": "700GB",
+            "runnable": "gpt-4:latest"
+        },
+        {
+            "name": "bloom",
+            "type": "AI",
+            "parameters": "176B",
+            "description": "BigScience's BLOOM model",
+            "arch": "transformer",
+            "quantization": "FP16",
+            "memory": "700GB",
+            "runnable": "bloom:latest"
+        },
+        {
+            "name": "opt",
+            "type": "AI",
+            "parameters": "175B",
+            "description": "Meta's OPT model",
+            "arch": "transformer",
+            "quantization": "FP16",
+            "memory": "700GB",
+            "runnable": "opt:latest"
+        },
+        {
+            "name": "chatglm",
+            "type": "AI",
+            "parameters": "6B",
+            "description": "ChatGLM model for bilingual tasks",
+            "arch": "glm",
+            "quantization": "Q4_K_M",
+            "memory": "4.5GB",
+            "runnable": "chatglm:latest"
+        },
+        {
+            "name": "alpaca",
+            "type": "AI",
+            "parameters": "7B",
+            "description": "Stanford's Alpaca model",
+            "arch": "llama",
+            "quantization": "Q4_K_M",
+            "memory": "4.8GB",
+            "runnable": "alpaca:latest"
         }
     ]
 }
