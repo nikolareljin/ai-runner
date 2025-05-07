@@ -7,9 +7,32 @@ DEFAULT_MODEL="llama3"
 # -m <model>        : run specific model
 # -p <prompt>       : prompt to use 
 
+help() {
+    echo "Usage: $0 [-i] [-m <model>] [-p <prompt>]"
+    echo "Options:"
+    echo "  -i                : Install dependencies"
+    echo "  -m <model>        : Run specific model"
+    echo "  -p <prompt>       : Prompt to use"
+    exit 1
+}
+
 # Specs for dialog.
 DIALOG_WIDTH=60
 DIALOG_HEIGHT=20
+
+# check the dimensions dynamically. Set them to be 70% of the screen size.
+DIALOG_WIDTH=$(tput cols)
+DIALOG_HEIGHT=$(tput lines)
+DIALOG_WIDTH=$((DIALOG_WIDTH * 70 / 100))
+DIALOG_HEIGHT=$((DIALOG_HEIGHT * 70 / 100))
+
+# Set minimum dimensions for dialog
+if [ $DIALOG_WIDTH -lt 60 ]; then
+    DIALOG_WIDTH=60
+fi
+if [ $DIALOG_HEIGHT -lt 20 ]; then
+    DIALOG_HEIGHT=20
+fi
 
 # Run parameters.
 run_install=0
@@ -32,6 +55,7 @@ while getopts "im:p:" opt; do
             ;;
         \?)
             echo "Invalid option: $OPTARG" 1>&2
+            help
             ;;
     esac
 done
@@ -121,7 +145,7 @@ fi
 
 source .env
 
-options=$(jq -r '.[] | "\(.name) \(.parameters) \(.sizes)"' ${MODEL_FILE})
+options=$(jq -r '.[] | "\(.name) \(.tags) \(.sizes)"' ${MODEL_FILE})
 menu_items=()
 
 # ----------------- MODEL -----------------
@@ -130,14 +154,18 @@ current_model=$(grep -oP '^model=\K.*' .env)
 while IFS= read -r line; do
     key=$(echo "$line" | awk '{print $1}')
     value=$(echo "$line" | awk '{$1=""; print $0}')
-    menu_items+=("$key" "$value")
+    if [[ "$key" == "$current_model" ]]; then
+        menu_items+=("$key" "$value" "on")
+    else
+        menu_items+=("$key" "$value" "off")
+    fi
     # Preselect the current model if it matches
     if [[ "$key" == "$current_model" ]]; then
         preselected_model="$key"
     fi
 done <<< "$options"
 
-selected_model=$(dialog --menu "Select a model to download" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" --default-item "${preselected_model}" 3>&1 1>&2 2>&3)
+selected_model=$(dialog --radiolist "Select a model to download" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
 
 # Put selected_model into .env file.
 if [ -n "$selected_model" ]; then
@@ -156,9 +184,21 @@ else
 fi
 
 # ----------------- SIZE -----------------
-# Select the Size of the model (using the $MODEL_FILE).
-selected_size=$(dialog --menu "Select a size for the model" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
-# Put selected_size into .env file.
+# Extract sizes for the selected model using jq
+sizes=$(jq -r --arg model "$selected_model" '.[] | select(.name == $model) | .sizes[]' ${MODEL_FILE})
+# echo "Sizes for the selected model: $sizes"
+# exit 2
+
+# Prepare menu items for dialog
+menu_items=()
+while IFS= read -r size; do
+    menu_items+=("$size" "$size")
+done <<< "$sizes"
+
+# Display the sizes in a dialog menu
+selected_size=$(dialog --menu "Select a size for the model: ${selected_model}" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
+
+# Put selected_size into .env file
 if [ -n "$selected_size" ]; then
     echo "Selected size: $selected_size"
     # Check if the selected size is already in the .env file
@@ -170,9 +210,10 @@ if [ -n "$selected_size" ]; then
         echo "size=${selected_size}" >> .env
     fi
 else
-    echo "No size selected. Exiting..."
-    exit 1
+    echo "No size selected. Using :latest (default)."
+    selected_size="latest"
 fi
+
 # Check if the selected size is already in the .env file
 if grep -q "size=" .env; then
     # If it is, replace it
@@ -203,7 +244,7 @@ if [[ -z "$selected_model" ]]; then
 
 else 
     # Pull the selected model
-    ollama pull "$selected_model:latest"
+    ollama pull "$selected_model:$selected_size"
 
     # Run the selected model
     ollama run ${selected_model}
@@ -216,3 +257,9 @@ curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"${selected_mo
 # Grab the results
 
 # Display the results with md format and show them
+
+# Clear old ollama models that are not being used or active.
+ollama prune
+# Remove the temporary prompt file
+rm -f /tmp/prompt.txt
+
