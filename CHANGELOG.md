@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Dynamical pull of models
+## Dynamic pull of models
 - Pull all ollama available models and store them into JSON file (using git repo Python dependency: `webfarmer/ollama-get-models`)
 - select model and size to run
 - store values into `.env` file and update on each run
