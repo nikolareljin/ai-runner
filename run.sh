@@ -258,12 +258,39 @@ else
     ollama pull "$selected_model:$selected_size"
 
     # Run the selected model
-    ollama run ${selected_model}:$selected_size --prompt "$prompt" --stream false
+    ollama run ${selected_model}:$selected_size &
 fi
 
 # ---------- CURL request to endpoint -----------------
 # make CURL request
-curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"${selected_model}\",  \"prompt\":\"${prompt}\", \"stream\": false}"
+curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"${selected_model}\",  \"prompt\":\"${prompt}\", \"stream\": false}" > ./response.json
+
+# Write the response in nice format with jq tool.
+jq -r '.response' response.json > /tmp/response.txt
+# Check if the response was successful
+if [ $? -eq 0 ]; then
+    echo "Response received successfully."
+else
+    echo "Error receiving response."
+    exit 1
+fi
+# Read the response from the file
+response=$(cat /tmp/response.txt)
+# Check if the response is empty
+if [[ -z "$response" ]]; then
+    echo "No response received. Exiting..."
+    exit 1
+fi
+# Display the response in a dialog box
+dialog --title "Response" --msgbox "$response" ${DIALOG_HEIGHT} ${DIALOG_WIDTH}
+
+# Display the response in a markdown format
+echo "## Response" > /tmp/response.md
+echo "### Model: ${selected_model}" >> /tmp/response.md
+echo "### Size: ${selected_size}" >> /tmp/response.md
+echo "### Prompt: ${prompt}" >> /tmp/response.md
+echo "### Response:" >> /tmp/response.md
+echo "$response" >> /tmp/response.md
 
 # Grab the results
 
