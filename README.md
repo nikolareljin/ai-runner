@@ -6,7 +6,7 @@ Allows to quickly run models available on ollama website with a single command.
 Models available at: https://ollama.com/search
 
 
-# Run the model
+# Run the model and install
 
 Run the command:
 
@@ -18,10 +18,21 @@ Parameters:
 - `-m <model>`  : define the model to use
 - `-p <prompt>` : run the prompt command right away
 
+Example:
 
 ```sh
 ./run
 ```
+
+# Run the prompt in existing model
+
+If you already set up the model, size and have run the steps under `./run`, you can run the prompt directly, using the Curl request and see the results in the dialog:
+
+```
+./prompt
+```
+
+![image](https://github.com/user-attachments/assets/eb3512a6-c13f-467e-8fc4-04d406d97ec9)
 
 
 # Only download the models
