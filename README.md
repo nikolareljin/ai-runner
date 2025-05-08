@@ -40,3 +40,15 @@ If you already set up the model, size and have run the steps under `./run`, you 
 You can also only download the models for your use and later access them from your local.
 
 TBD
+
+# Run prompts as CURL
+
+You can run prompts against the running model via curl commands:
+
+Example:
+
+```
+curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"llama3\",  \"prompt\":\"Tell me about the meaning of life.\", \"stream\": false}"
+
+``` 
+
