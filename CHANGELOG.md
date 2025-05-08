@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## Add shared library for functions
+- Group shared functions into ./include.sh file, which will be used by the scripts
+- Update installation of dependencies. Include clipboard helper to preserve the responses.
+
 ## Add ./prompt script for prompting
 - add script ./prompt which allows communication with the running ollama model with curl requests
 

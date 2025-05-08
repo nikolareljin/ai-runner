@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ./include.sh
+
 DEFAULT_MODEL="llama3"
 
 # Options: 
@@ -15,24 +17,6 @@ help() {
     echo "  -p <prompt>       : Prompt to use"
     exit 1
 }
-
-# Specs for dialog.
-DIALOG_WIDTH=60
-DIALOG_HEIGHT=20
-
-# check the dimensions dynamically. Set them to be 70% of the screen size.
-DIALOG_WIDTH=$(tput cols)
-DIALOG_HEIGHT=$(tput lines)
-DIALOG_WIDTH=$((DIALOG_WIDTH * 70 / 100))
-DIALOG_HEIGHT=$((DIALOG_HEIGHT * 70 / 100))
-
-# Set minimum dimensions for dialog
-if [ $DIALOG_WIDTH -lt 60 ]; then
-    DIALOG_WIDTH=60
-fi
-if [ $DIALOG_HEIGHT -lt 20 ]; then
-    DIALOG_HEIGHT=20
-fi
 
 # Run parameters.
 run_install=0
@@ -62,59 +46,7 @@ done
 
 # Install llama and its dependencies
 if [[ 1 == ${run_install} ]]; then
-    # If dialog, curl and jq are not installed, install them
-    if ! [ -x "$(command -v dialog)" ]; then
-        echo "Dialog is not installed. Installing..."
-        sudo apt-get install -y dialog
-    fi
-
-    # If curl not installed, install it
-    if ! [ -x "$(command -v curl)" ]; then
-        echo "Curl is not installed. Installing..."
-        sudo apt-get install -y curl
-    fi
-
-    # If jq is not installed, install it
-    if ! [ -x "$(command -v jq)" ]; then
-        echo "jq is not installed. Installing..."
-        sudo apt-get install -y jq
-    fi
-
-    # if llama is not installed, install it
-    if ! [ -x "$(command -v llama)" ]; then
-        echo "Llama is not installed. Installing..."
-        curl -fsSL https://ollama.com/install.sh | sh
-    fi
-
-    # check if "ollama-get-models" directory is not present.
-    # If so, clone the repository.
-    if [ ! -d "ollama-get-models" ]; then
-        echo "ollama-get-models directory not found. Cloning..."
-        git clone git@github.com:webfarmer/ollama-get-models.git
-        # GH CLI: gh repo clone webfarmer/ollama-get-models
-
-        # Now, scrape the models from the website and store them in models.json file.
-        # Check if jq is installed
-        cd ollama-get-models
-        # Run the python script to scrape the models
-        if ! [ -x "$(command -v python3)" ]; then
-            echo "Python3 is not installed. Installing..."
-            sudo apt-get install -y python3
-        fi
-        if ! [ -x "$(command -v pip3)" ]; then
-            echo "pip3 is not installed. Installing..."
-            sudo apt-get install -y python3-pip
-        fi
-        # Now pull the models from the website and store them in models.json file.
-        python3 get_ollama_models.py
-        # Check if the ./code/ollama_models.json file exists
-        if [ -f "./code/ollama_models.json" ]; then
-            echo "Models file found."
-        else
-            echo "Models file not found. Exiting..."
-            exit 1
-        fi
-    fi
+    install_dependencies
 fi
 
 # Check if .env file exists
@@ -122,8 +54,6 @@ if [ ! -f ".env" ]; then
     echo "No .env file found. Creating..."
     cp .env.example.txt .env
 fi
-
-# TODO: implement pulling of avaialble models from Ollama website. Store this into models.json file.
 
 MODEL_FILE="./ollama-get-models/code/ollama_models.json"
 if [ ! -f "$MODEL_FILE" ]; then
@@ -154,7 +84,6 @@ options=$(jq -r '.[] | "\(.name) \(.tags) \(.sizes)"' ${MODEL_FILE})
 menu_items=()
 
 # ----------------- MODEL -----------------
-# selected_model=$(dialog --menu "Select a model to download" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 5 "${menu_items[@]}" 3>&1 1>&2 2>&3)
 current_model=$(grep -oP '^model=\K.*' .env)
 while IFS= read -r line; do
     key=$(echo "$line" | awk '{print $1}')
@@ -281,8 +210,18 @@ if [[ -z "$response" ]]; then
     echo "No response received. Exiting..."
     exit 1
 fi
+
+# Copy the response into clipboard memory. Use helper method from include.sh
+copy_to_clipboard "$response"
+
+# Format the response to be displayed in the dialog box. Use helper method from include.sh
+formatted_response=$(format_response "$response")
+
 # Display the response in a dialog box
-dialog --title "Response" --msgbox "$response" ${DIALOG_HEIGHT} ${DIALOG_WIDTH}
+dialog --title "Response" --msgbox "$formatted_response" ${DIALOG_HEIGHT} ${DIALOG_WIDTH}
+
+# Format the reponse as MD format. Use helper method from include.sh
+formatted_md_response=$(format_md_response "$response")
 
 # Display the response in a markdown format
 echo "## Response" > /tmp/response.md
@@ -290,9 +229,9 @@ echo "### Model: ${selected_model}" >> /tmp/response.md
 echo "### Size: ${selected_size}" >> /tmp/response.md
 echo "### Prompt: ${prompt}" >> /tmp/response.md
 echo "### Response:" >> /tmp/response.md
-echo "$response" >> /tmp/response.md
+echo "$formatted_md_response" >> /tmp/response.md
 
-# Grab the results
+# Grab the results.
 
 # Display the results with md format and show them
 
