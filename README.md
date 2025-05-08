@@ -32,6 +32,8 @@ If you already set up the model, size and have run the steps under `./run`, you 
 ./prompt
 ```
 
+![image](https://github.com/user-attachments/assets/eb3512a6-c13f-467e-8fc4-04d406d97ec9)
+
 
 # Only download the models
 
