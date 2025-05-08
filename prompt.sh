@@ -3,24 +3,6 @@
 source ./include.sh
 source ./.env
 
-# # Specs for dialog.
-# DIALOG_WIDTH=60
-# DIALOG_HEIGHT=20
-
-# # check the dimensions dynamically. Set them to be 70% of the screen size.
-# DIALOG_WIDTH=$(tput cols)
-# DIALOG_HEIGHT=$(tput lines)
-# DIALOG_WIDTH=$((DIALOG_WIDTH * 70 / 100))
-# DIALOG_HEIGHT=$((DIALOG_HEIGHT * 70 / 100))
-
-# # Set minimum dimensions for dialog
-# if [ $DIALOG_WIDTH -lt 60 ]; then
-#     DIALOG_WIDTH=60
-# fi
-# if [ $DIALOG_HEIGHT -lt 20 ]; then
-#     DIALOG_HEIGHT=20
-# fi
-
 # Get the prompt using the dialog command.
 prompt=$(dialog --inputbox "Enter your prompt:" $DIALOG_HEIGHT $DIALOG_WIDTH 3>&1 1>&2 2>&3)
 
@@ -43,15 +25,5 @@ fi
 # Display the response in a dialog box
 dialog --title "Response" --msgbox "$response" ${DIALOG_HEIGHT} ${DIALOG_WIDTH}
 
-# Copy the response into clipboard memory.
-# if command -v xclip &> /dev/null; then
-#     echo "$response" | xclip -selection clipboard
-#     echo "Response copied to clipboard."
-# elif command -v pbcopy &> /dev/null; then
-#     echo "$response" | pbcopy
-#     echo "Response copied to clipboard."
-# else
-#     echo "No clipboard utility found. Response not copied."
-# fi
 # Copy the response into clipboard memory. Uses helper method from include.sh
 copy_to_clipboard "$response"
