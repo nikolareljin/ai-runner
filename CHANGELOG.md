@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Add ./prompt script for prompting
+- add script ./prompt which allows communication with the running ollama model with curl requests
+
 ## Dynamic pull of models
 - Pull all ollama available models and store them into JSON file (using git repo Python dependency: `webfarmer/ollama-get-models`)
 - select model and size to run
