@@ -235,3 +235,198 @@ format_md_response() {
         echo "$response"
     fi
 }
+
+# --------------------------------------------------
+# Define colors for the text.
+COLOR_RED="\033[31m"
+COLOR_GREEN="\033[32m"
+COLOR_YELLOW="\033[33m"
+COLOR_BLUE="\033[34m"
+COLOR_CYAN="\033[36m"
+COLOR_MAGENTA="\033[35m"
+COLOR_WHITE="\033[37m"
+COLOR_GREY="\033[90m"
+COLOR_BOLD="\033[1m"
+COLOR_UNDERLINE="\033[4m"
+COLOR_RESET="\033[0m"
+# --------------------------------------------------
+# Print the text in different colors.
+# It uses ANSI escape codes to print the text in different colors.
+# It supports red, green, yellow, blue, cyan, magenta, white, and grey colors.
+# It also supports printing the text in bold and underlined format.
+print_color() {
+    # Print the text in the specified color
+    local text=$1
+    local color=$2
+    # Second text and color combination.
+    local text2=$3
+    local color2=$4
+
+    local start_color=$color
+    local end_color=$color2
+
+    # If color2 is empty, then set the GREY color for the start, and use first color for the end.
+    if [[ -z "$color2" ]]; then
+        start_color=$COLOR_GREY
+        end_color=$color
+    fi
+
+    if [[ -z "$text2" ]]; then
+        # Print the text in the specified color
+        echo -e "${start_color}${text}${COLOR_RESET}"
+    else
+        # Print the text in the specified color with a second line
+        echo -e "${start_color}${text}${COLOR_RESET}\n${end_color}${text2}${COLOR_RESET}"
+    fi
+}
+print_grey() {
+    # Print the text in grey color
+    local text=$1
+    local text2=$2
+    local color=$COLOR_GREY
+
+    if [[ -z "$text2" ]]; then
+        # Print the text in grey color
+        print_color "$text" "$color"
+    else
+        # Print the text in grey color with a second line
+        print_color "$text" "$color" "$text2"
+    fi
+}
+print_red() {
+    # Print the text in grey color
+    local text=$1
+    local text2=$2
+    local color=$COLOR_RED
+
+    if [[ -z "$text2" ]]; then
+        # Print the text in grey color
+        print_color "$text" "$color"
+    else
+        # Print the text in grey color with a second line
+        print_color "$text" "$color" "$text2"
+    fi
+}
+print_green() {
+    # Print the text in grey color
+    local text=$1
+    local text2=$2
+    local color=$COLOR_GREEN
+
+    if [[ -z "$text2" ]]; then
+        # Print the text in grey color
+        print_color "$text" "$color"
+    else
+        # Print the text in grey color with a second line
+        print_color "$text" "$color" "$text2"
+    fi
+}
+print_yellow() {
+    # Print the text in grey color
+    local text=$1
+    local text2=$2
+    local color=$COLOR_YELLOW
+
+    if [[ -z "$text2" ]]; then
+        # Print the text in grey color
+        print_color "$text" "$color"
+    else
+        # Print the text in grey color with a second line
+        print_color "$text" "$color" "$text2"
+    fi
+}
+print_blue() {
+    # Print the text in grey color
+    local text=$1
+    local text2=$2
+    local color=$COLOR_BLUE
+
+    if [[ -z "$text2" ]]; then
+        # Print the text in grey color
+        print_color "$text" "$color"
+    else
+        # Print the text in grey color with a second line
+        print_color "$text" "$color" "$text2"
+    fi
+}
+print_cyan() {
+    # Print the text in grey color
+    local text=$1
+    local text2=$2
+    local color=$COLOR_CYAN
+
+    if [[ -z "$text2" ]]; then
+        # Print the text in grey color
+        print_color "$text" "$color"
+    else
+        # Print the text in grey color with a second line
+        print_color "$text" "$color" "$text2"
+    fi
+}
+print_magenta() {
+    # Print the text in grey color
+    local text=$1
+    local text2=$2
+    local color=$COLOR_MAGENTA
+
+    if [[ -z "$text2" ]]; then
+        # Print the text in grey color
+        print_color "$text" "$color"
+    else
+        # Print the text in grey color with a second line
+        print_color "$text" "$color" "$text2"
+    fi
+}
+print_white() {
+    # Print the text in grey color
+    local text=$1
+    local text2=$2
+    local color=$COLOR_WHITE
+
+    if [[ -z "$text2" ]]; then
+        # Print the text in grey color
+        print_color "$text" "$color"
+    else
+        # Print the text in grey color with a second line
+        print_color "$text" "$color" "$text2"
+    fi
+}
+
+# --------------------------------------------------
+# Display help information for the script.
+# It checks if the help flag is set and displays the help information.
+# It also checks if the script is run with the help flag and displays the help information.
+# Make it modular so that it uses the header information from the script file itself to display the help information.
+display_help() {
+    # Read information from the script file. Structure is as follows:
+    # #!/bin/bash
+    # # SCRIPT: run.sh
+    # # DESCRIPTION: Script to run the Ollama model and make a curl request to the endpoint.
+    # # USAGE: ./run.sh [-i] [-m <model>] [-p <prompt>]
+    # # PARAMETERS:
+    # # -i                : install,
+    # # -m <model>        : run specific model
+    # # -p <prompt>       : prompt to use 
+    # # -h                : show help
+    # # EXAMPLE: ./run.sh -i -m llama3 -p "Hello, how are you?"
+    # # ----------------------------------------------------
+    # Get the script name
+    script_name=$(grep "^# SCRIPT:" "$0" | cut -d ":" -f 2 | sed 's/^ *//g')
+    # Get the script description
+    script_description=$(grep "^# DESCRIPTION:" "$0" | cut -d ":" -f 2 | sed 's/^ *//g')
+    # Get the script usage
+    script_usage=$(grep "^# USAGE:" "$0" | cut -d ":" -f 2 | sed 's/^ *//g')
+    # Get the script parameters
+    script_parameters=$(awk '/^# PARAMETERS:/ {flag=1; next} /^# EXAMPLE/ {flag=0} flag {print substr($0, 3)}' "$0" | sed 's/^ *//g')
+    script_example=$(grep "^# EXAMPLE:" "$0" | cut -d ":" -f 2 | sed 's/^ *//g')
+
+    # Display the help information. Use regular echo with colors (and not dialog).
+    print_green "Script Name:" " $script_name"
+    print_green "Description:" " $script_description"
+    print_green "Usage:" " $script_usage"
+    if [[ ! -z "$script_parameters" ]]; then
+        print_yellow "Parameters:" " $script_parameters"
+    fi
+    print_yellow "Example:" " $script_example"
+    print_white "----------------------------------------------------"
+}

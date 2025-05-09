@@ -1,10 +1,41 @@
 #!/bin/bash
+# SCRIPT: prompt.sh
+# DESCRIPTION: Script to run the Ollama model and make a curl request to the endpoint.
+# USAGE: ./prompt.sh [-h]
+# EXAMPLE: ./prompt
+# ----------------------------------------------------
 
 source ./include.sh
 source ./.env
 
-# Get the prompt using the dialog command.
-prompt=$(dialog --inputbox "Enter your prompt:" $DIALOG_HEIGHT $DIALOG_WIDTH 3>&1 1>&2 2>&3)
+help() {
+    display_help
+    exit 1
+}
+
+prompt=""
+
+# Get the options
+while getopts "hp:" opt; do
+    case ${opt} in
+        h)
+            help
+            ;;
+        p)
+            prompt=$OPTARG
+            ;;
+        \?)
+            echo "Invalid option: $OPTARG" 1>&2
+            help
+            ;;
+    esac
+done
+
+
+if [[ -z "$prompt" ]]; then
+    # Get the prompt using the dialog command.
+    prompt=$(dialog --inputbox "Enter your prompt:" $DIALOG_HEIGHT $DIALOG_WIDTH 3>&1 1>&2 2>&3)
+fi
 
 # using existing ollama service, make a query to the endpoint with the prompt and display the response.
 curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"${model}\",  \"prompt\":\"${prompt}\", \"stream\": false}" > ./response.json

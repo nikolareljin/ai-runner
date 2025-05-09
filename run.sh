@@ -1,4 +1,14 @@
 #!/bin/bash
+# SCRIPT: run.sh
+# DESCRIPTION: Script to run the Ollama model and make a curl request to the endpoint.
+# USAGE: ./run.sh [-i] [-m <model>] [-p <prompt>]
+# PARAMETERS:
+# -i                : install,
+# -m <model>        : run specific model
+# -p <prompt>       : prompt to use 
+# -h                : show help
+# EXAMPLE: ./run -i -m llama3 -p "Hello, how are you?"
+# ----------------------------------------------------
 
 source ./include.sh
 
@@ -10,11 +20,7 @@ DEFAULT_MODEL="llama3"
 # -p <prompt>       : prompt to use 
 
 help() {
-    echo "Usage: $0 [-i] [-m <model>] [-p <prompt>]"
-    echo "Options:"
-    echo "  -i                : Install dependencies"
-    echo "  -m <model>        : Run specific model"
-    echo "  -p <prompt>       : Prompt to use"
+    display_help
     exit 1
 }
 
@@ -24,7 +30,7 @@ run_model=0
 run_prompt=0
 
 # Get the options
-while getopts "im:p:" opt; do
+while getopts "him:p:" opt; do
     case ${opt} in
         i)
             run_install=1
@@ -36,6 +42,9 @@ while getopts "im:p:" opt; do
         p)
             run_prompt=1
             prompt=$OPTARG
+            ;;
+        h)
+            help
             ;;
         \?)
             echo "Invalid option: $OPTARG" 1>&2
