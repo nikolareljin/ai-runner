@@ -425,7 +425,7 @@ display_help() {
     print_green "Description:" " $script_description"
     print_green "Usage:" " $script_usage"
     if [[ ! -z "$script_parameters" ]]; then
-        print_yellow "Parameters:" " $script_parameters"
+        print_white "Parameters:" "$script_parameters"
     fi
     print_yellow "Example:" " $script_example"
     print_white "----------------------------------------------------"
