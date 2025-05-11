@@ -52,3 +52,9 @@ curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"llama3\",  \"
 
 ``` 
 
+# Endpoints
+
+- http://localhost:11434/api/tags
+- http://localhost:11434/api/generate
+
+
