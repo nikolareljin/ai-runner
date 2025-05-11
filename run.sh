@@ -64,6 +64,7 @@ if [ ! -f ".env" ]; then
     cp .env.example.txt .env
 fi
 
+# Model file path.
 MODEL_FILE="./ollama-get-models/code/ollama_models.json"
 if [ ! -f "$MODEL_FILE" ]; then
     echo "No models.json file found. Exiting..."
@@ -74,8 +75,9 @@ fi
 jq -S 'sort_by(.name)' ${MODEL_FILE} > ${MODEL_FILE}.tmp
 mv ${MODEL_FILE}.tmp ${MODEL_FILE}
 
-# OLD implementation: using manually entered models.json file.
-# Process all the models from models.json file and display them as options in the Dialog. 
+# Alternative implementation: using manually entered models.json file.
+# Process all the models from models.json file and display them as options in the Dialog.
+# Drawback: This file will need manual updates. It will not include all the models currently available on ollama. ALso, the models.json file is not in the same format as the one used in the rest of the script. It won't allow selection of the sizes. 
 # Use jq to parse the json file and display the options in dialog.
 # Provide the details in the options: name, parameters, memory.
 # Store the selected model in a variable ${selected_model}.
@@ -89,7 +91,7 @@ mv ${MODEL_FILE}.tmp ${MODEL_FILE}
 
 source .env
 
-options=$(jq -r '.[] | "\(.name) \(.tags) \(.sizes)"' ${MODEL_FILE})
+options=$(jq -r '.[] | "\(.name) sizes:\t\(.sizes)"' ${MODEL_FILE})
 menu_items=()
 
 # ----------------- MODEL -----------------
