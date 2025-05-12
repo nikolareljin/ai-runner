@@ -49,7 +49,6 @@ Example:
 
 ```
 curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"llama3\",  \"prompt\":\"Tell me about the meaning of life.\", \"stream\": false}"
-
 ``` 
 
 # Endpoints
@@ -57,4 +56,15 @@ curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"llama3\",  \"
 - http://localhost:11434/api/tags
 - http://localhost:11434/api/generate
 
+
+Check parameters of the currently installed model:
+
+First, check what is the installed (and running) model. It should reflect what's in the `.env` file.
+
+Run:
+
+```
+source .env
+ollama show --modelfile $MODEL
+```
 
