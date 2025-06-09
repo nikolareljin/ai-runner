@@ -48,74 +48,25 @@ get_os(){
 # It also scrapes the models from the website and stores them in models.json file.
 install_dependencies() {
     local os=$(get_os)
-    
-    # Check if dialog is installed
-    if ! [ -x "$(command -v dialog)" ]; then
-        echo "Dialog is not installed. Installing..."
-        if [[ "$os" == "linux" ]]; then
-            sudo apt-get install -y dialog
-        elif [[ "$os" == "mac" ]]; then
-            brew install dialog
-        elif [[ "$os" == "windows" ]]; then
-            echo "Dialog is not supported on Windows. Please install it manually."
-            exit 1
-        fi
-    fi
+    # Dependencies: dialog, curl, jq, python3, pip3, ollama, nodejs, npx
+    local dependencies=(dialog curl jq python3 python3-pip nodejs)
 
-    # Check if curl is installed
-    if ! [ -x "$(command -v curl)" ]; then
-        echo "Curl is not installed. Installing..."
-        if [[ "$os" == "linux" ]]; then
-            sudo apt-get install -y curl
-        elif [[ "$os" == "mac" ]]; then
-            brew install curl
-        elif [[ "$os" == "windows" ]]; then
-            echo "Curl is not supported on Windows. Please install it manually."
-            exit 1
+    for dep in "${dependencies[@]}"; do
+        if ! [ -x "$(command -v $dep)" ]; then
+            echo "$dep is not installed. Installing..."
+            if [[ "$os" == "linux" ]]; then
+                sudo apt-get install -y $dep
+            elif [[ "$os" == "mac" ]]; then
+                brew install $dep
+            elif [[ "$os" == "windows" ]]; then
+                echo "$dep is not supported on Windows. Please install it manually."
+                exit 1
+            fi
         fi
-    fi
-
-    # Check if jq is installed
-    if ! [ -x "$(command -v jq)" ]; then
-        echo "jq is not installed. Installing..."
-        if [[ "$os" == "linux" ]]; then
-            sudo apt-get install -y jq
-        elif [[ "$os" == "mac" ]]; then
-            brew install jq
-        elif [[ "$os" == "windows" ]]; then
-            echo "jq is not supported on Windows. Please install it manually."
-            exit 1
-        fi
-    fi
-
-    # Check if python3 is installed
-    if ! [ -x "$(command -v python3)" ]; then
-        echo "Python3 is not installed. Installing..."
-        if [[ "$os" == "linux" ]]; then
-            sudo apt-get install -y python3
-        elif [[ "$os" == "mac" ]]; then
-            brew install python3
-        elif [[ "$os" == "windows" ]]; then
-            echo "Python3 is not supported on Windows. Please install it manually."
-            exit 1
-        fi
-    fi
-
-    # Check if pip3 is installed
-    if ! [ -x "$(command -v pip3)" ]; then
-        echo "pip3 is not installed. Installing..."
-        if [[ "$os" == "linux" ]]; then
-            sudo apt-get install -y python3-pip
-        elif [[ "$os" == "mac" ]]; then
-            brew install python3-pip
-        elif [[ "$os" == "windows" ]]; then
-            echo "pip3 is not supported on Windows. Please install it manually."
-            exit 1
-        fi
-    fi
+    done
 
     # Install Ollama
-    if ! [ -x "$(command -v ollama)" ]; then
+    if [[ ! -x "$(command -v ollama)" ]]; then
         echo "Ollama is not installed. Installing..."
         if [[ "$os" == "linux" ]]; then
             curl -fsSL https://ollama.com/install.sh | sh
@@ -128,7 +79,7 @@ install_dependencies() {
     fi
 
     # Check if git is installed
-    if ! [ -x "$(command -v git)" ]; then
+    if [[ ! -x "$(command -v git)" ]]; then
         echo "Git is not installed. Installing..."
         if [[ "$os" == "linux" ]]; then
             sudo apt-get install -y git
@@ -142,9 +93,9 @@ install_dependencies() {
 
     # check if "ollama-get-models" directory is not present.
     # If so, clone the repository.
-    if [ ! -d "ollama-get-models" ]; then
+    if [[ ! -d "ollama-get-models" ]]; then
         echo "ollama-get-models directory not found. Cloning..."
-        git clone git@github.com:webfarmer/ollama-get-models.git
+        git clone https://github.com/webfarmer/ollama-get-models.git
         # GH CLI: gh repo clone webfarmer/ollama-get-models
 
         # Now, scrape the models from the website and store them in models.json file.
@@ -170,12 +121,55 @@ install_dependencies() {
         fi
     elif [[ "$os" == "mac" ]]; then
         if ! [ -x "$(command -v pbcopy)" ]; then
-            echo "pbcopy is not installed. Installing..."
-            brew install pbcopy
+            echo "pbcopy is not installed. It should be available by default on macOS."
+            echo "If you are missing pbcopy, please ensure you are running macOS or install it via Xcode Command Line Tools."
         fi
     elif [[ "$os" == "windows" ]]; then
         echo "Clipboard utility is not supported on Windows. Please install it manually."
         exit 1
+    fi
+
+    # Upgrade Nodejs to version 20.
+    if [[ "$os" == "linux" ]]; then
+        if ! [ -x "$(command -v node)" ] || [[ "$(node -v)" < "v20" ]]; then
+            echo "Node.js is not installed or is outdated. Installing/upgrading to Node.js 20..."
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+        fi
+    elif [[ "$os" == "mac" ]]; then
+        if ! [ -x "$(command -v node)" ] || [[ "$(node -v)" < "v20" ]]; then
+            echo "Node.js is not installed or is outdated. Installing/upgrading to Node.js 20..."
+            brew install node@20
+        fi
+    elif [[ "$os" == "windows" ]]; then
+        echo "Node.js is not supported on Windows. Please install it manually."
+        exit 1
+    fi
+
+    # Install npx.
+    if [[ ! -x "$(command -v npx)" ]]; then
+        echo "npx is not installed. Installing..."
+        if [[ "$os" == "linux" ]]; then
+            sudo apt-get install -y npm
+        elif [[ "$os" == "mac" ]]; then
+            brew install npm
+        elif [[ "$os" == "windows" ]]; then
+            echo "npx is not supported on Windows. Please install it manually."
+            exit 1
+        fi
+    fi
+
+    # Install pip3 if not installed
+    if [[ ! -x "$(command -v pip3)" ]]; then
+        echo "pip3 is not installed. Installing..."
+        if [[ "$os" == "linux" ]]; then
+            sudo apt-get install -y python3-pip
+        elif [[ "$os" == "mac" ]]; then
+            brew install python3
+        elif [[ "$os" == "windows" ]]; then
+            echo "pip3 is not supported on Windows. Please install it manually."
+            exit 1
+        fi
     fi
 }
 
@@ -256,8 +250,8 @@ COLOR_RESET="\033[0m"
 # It also supports printing the text in bold and underlined format.
 print_color() {
     # Print the text in the specified color
-    local text=$1
-    local color=$2
+    local color=$1
+    local text=$2
     # Second text and color combination.
     local text2=$3
     local color2=$4
@@ -277,118 +271,6 @@ print_color() {
     else
         # Print the text in the specified color with a second line
         echo -e "${start_color}${text}${COLOR_RESET}\n${end_color}${text2}${COLOR_RESET}"
-    fi
-}
-print_grey() {
-    # Print the text in grey color
-    local text=$1
-    local text2=$2
-    local color=$COLOR_GREY
-
-    if [[ -z "$text2" ]]; then
-        # Print the text in grey color
-        print_color "$text" "$color"
-    else
-        # Print the text in grey color with a second line
-        print_color "$text" "$color" "$text2"
-    fi
-}
-print_red() {
-    # Print the text in grey color
-    local text=$1
-    local text2=$2
-    local color=$COLOR_RED
-
-    if [[ -z "$text2" ]]; then
-        # Print the text in grey color
-        print_color "$text" "$color"
-    else
-        # Print the text in grey color with a second line
-        print_color "$text" "$color" "$text2"
-    fi
-}
-print_green() {
-    # Print the text in grey color
-    local text=$1
-    local text2=$2
-    local color=$COLOR_GREEN
-
-    if [[ -z "$text2" ]]; then
-        # Print the text in grey color
-        print_color "$text" "$color"
-    else
-        # Print the text in grey color with a second line
-        print_color "$text" "$color" "$text2"
-    fi
-}
-print_yellow() {
-    # Print the text in grey color
-    local text=$1
-    local text2=$2
-    local color=$COLOR_YELLOW
-
-    if [[ -z "$text2" ]]; then
-        # Print the text in grey color
-        print_color "$text" "$color"
-    else
-        # Print the text in grey color with a second line
-        print_color "$text" "$color" "$text2"
-    fi
-}
-print_blue() {
-    # Print the text in grey color
-    local text=$1
-    local text2=$2
-    local color=$COLOR_BLUE
-
-    if [[ -z "$text2" ]]; then
-        # Print the text in grey color
-        print_color "$text" "$color"
-    else
-        # Print the text in grey color with a second line
-        print_color "$text" "$color" "$text2"
-    fi
-}
-print_cyan() {
-    # Print the text in grey color
-    local text=$1
-    local text2=$2
-    local color=$COLOR_CYAN
-
-    if [[ -z "$text2" ]]; then
-        # Print the text in grey color
-        print_color "$text" "$color"
-    else
-        # Print the text in grey color with a second line
-        print_color "$text" "$color" "$text2"
-    fi
-}
-print_magenta() {
-    # Print the text in grey color
-    local text=$1
-    local text2=$2
-    local color=$COLOR_MAGENTA
-
-    if [[ -z "$text2" ]]; then
-        # Print the text in grey color
-        print_color "$text" "$color"
-    else
-        # Print the text in grey color with a second line
-        print_color "$text" "$color" "$text2"
-    fi
-}
-print_white() {
-    # Print the text in grey color
-    local text=$1
-    local text2=$2
-    local color=$COLOR_WHITE
-
-    if [[ -z "$text2" ]]; then
-        # Print the text in grey color
-        print_color "$text" "$color"
-    else
-        # Print the text in grey color with a second line
-        print_color "$text" "$color" "$text2"
     fi
 }
 
@@ -421,12 +303,12 @@ display_help() {
     script_example=$(grep "^# EXAMPLE:" "$0" | cut -d ":" -f 2 | sed 's/^ *//g')
 
     # Display the help information. Use regular echo with colors (and not dialog).
-    print_green "Script Name:" " $script_name"
-    print_green "Description:" " $script_description"
-    print_green "Usage:" " $script_usage"
+    print_color $COLOR_GREEN "Script Name:" " $script_name"
+    print_color $COLOR_GREEN "Description:" " $script_description"
+    print_color $COLOR_GREEN "Usage:" " $script_usage"
     if [[ ! -z "$script_parameters" ]]; then
-        print_white "Parameters:" "$script_parameters"
+        print_color $COLOR_WHITE "Parameters:" "$script_parameters"
     fi
-    print_yellow "Example:" " $script_example"
-    print_white "----------------------------------------------------"
+    print_color $COLOR_YELLOW "Example:" " $script_example"
+    print_color $COLOR_WHITE "----------------------------------------------------"
 }
