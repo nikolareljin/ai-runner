@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## Update helper methods, display of help, santiation, multi-line entry
+- `tests/test-chat-python.py` -	Added a Python test for chat completion.
+- `tests/test-chat-javascript.js` -	Added a JavaScript test for chat completion.
+- `tests/test-chat-completions.sh	Added a shell test for chat completions (note potential JSON formatting issue).
+- `run.sh` - Enhanced the run script by incorporating a help flag and updating comments.
+- `prompt.sh` -	Updated the prompt script for multi-line input handling and sanitation.
+- `include.sh` -	Refactored dependency installation, added Node.js upgrade logic, and introduced color functions.
+- `get.sh` -	Updated the get script with help functionality and argument parsing.
+README.md	Extended documentation with new endpoints and usage instructions.
+
 ## Add shared library for functions
 - Group shared functions into ./include.sh file, which will be used by the scripts
 - Update installation of dependencies. Include clipboard helper to preserve the responses.
