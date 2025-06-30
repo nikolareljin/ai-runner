@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Update helper methods, display of help, santiation, multi-line entry
+## Update helper methods, display of help, sanitization, multi-line entry
 - `tests/test-chat-python.py` -	Added a Python test for chat completion.
 - `tests/test-chat-javascript.js` -	Added a JavaScript test for chat completion.
 - `tests/test-chat-completions.sh	Added a shell test for chat completions (note potential JSON formatting issue).
