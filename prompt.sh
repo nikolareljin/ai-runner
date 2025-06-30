@@ -52,7 +52,7 @@ if [[ -z "$prompt" ]]; then
         exit 1
     fi
     # Remove the temporary file
-    rm -f ./tmp.tmp
+    rm -f "$tmpfile"
 fi
 
 # using existing ollama service, make a query to the endpoint with the prompt and display the response.
