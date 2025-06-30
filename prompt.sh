@@ -41,10 +41,10 @@ if [[ -z "$prompt" ]]; then
     # prompt=$(dialog --inputbox "Enter your prompt:" $DIALOG_HEIGHT $DIALOG_WIDTH 3>&1 1>&2 2>&3)
     
     # Multi-line input box using dialog and tmp file.
-    touch ./tmp.tmp
-    # Use dialog to create an edit box for the prompt input and store result in ./tmp.tmp
-    dialog --title "Enter your prompt" --editbox ./tmp.tmp $DIALOG_HEIGHT $DIALOG_WIDTH 2> ./tmp.tmp
-    prompt=$(cat ./tmp.tmp)
+    tmpfile=$(mktemp)
+    # Use dialog to create an edit box for the prompt input and store result in the temporary file
+    dialog --title "Enter your prompt" --editbox "$tmpfile" $DIALOG_HEIGHT $DIALOG_WIDTH 2> "$tmpfile"
+    prompt=$(cat "$tmpfile")
     # Sanitize the prompt by removing quotes and newlines
     prompt=$(echo "$prompt" | tr -d '"' | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     if [[ -z "$prompt" ]]; then
