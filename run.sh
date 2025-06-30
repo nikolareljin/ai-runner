@@ -1,7 +1,7 @@
 #!/bin/bash
 # SCRIPT: run.sh
 # DESCRIPTION: Script to run the Ollama model and make a curl request to the endpoint.
-# USAGE: ./run.sh [-i] [-m <model>] [-p <prompt>]
+# USAGE: ./run.sh [-h] [-i] [-m <model>] [-p <prompt>]
 # PARAMETERS:
 # -i                : install,
 # -m <model>        : run specific model

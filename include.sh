@@ -274,6 +274,30 @@ print_color() {
     fi
 }
 
+print_info() {
+    print_color $COLOR_WHITE "[Info]: $1"
+}
+
+print_error() {
+    print_color $COLOR_RED "[Error!]: $1"
+    # Add bell sound
+    echo -e "\a"
+}
+
+print_success() {
+    print_color $COLOR_GREEN "Success [OK]: $1"
+}
+
+print_warning() {
+    print_color $COLOR_YELLOW "[Warning!]: $1"
+    # Add bell sound
+    echo -e "\a"
+}
+
+print_line() {
+    echo "----------------------------------------"
+}
+
 # --------------------------------------------------
 # Display help information for the script.
 # It checks if the help flag is set and displays the help information.

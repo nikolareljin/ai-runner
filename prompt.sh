@@ -1,8 +1,11 @@
 #!/bin/bash
 # SCRIPT: prompt.sh
-# DESCRIPTION: Script to run the Ollama model and make a curl request to the endpoint.
-# USAGE: ./prompt.sh [-h]
-# EXAMPLE: ./prompt
+# DESCRIPTION: Script to run the already set up Ollama model and make a curl request to the internal endpoint. NOTE: use command ./run first to select and set the model.
+# USAGE: ./prompt.sh [-h] [-p "<prompt>"]
+# PARAMETERS:
+# -p "<prompt>"     : prompt to use
+# -h                : show help
+# EXAMPLE: ./prompt.sh -p "What is the meaning of life?"
 # ----------------------------------------------------
 
 source ./include.sh
