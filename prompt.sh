@@ -46,7 +46,7 @@ if [[ -z "$prompt" ]]; then
     dialog --title "Enter your prompt" --editbox "$tmpfile" $DIALOG_HEIGHT $DIALOG_WIDTH 2> "$tmpfile"
     prompt=$(cat "$tmpfile")
     # Sanitize the prompt by removing quotes and newlines
-    prompt=$(echo "$prompt" | tr -d '"' | tr -d '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    prompt=$(echo "$prompt" | tr -d '"' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     if [[ -z "$prompt" ]]; then
         echo "No prompt provided. Exiting..."
         exit 1
