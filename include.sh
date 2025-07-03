@@ -53,7 +53,7 @@ install_dependencies() {
 
     for dep in "${dependencies[@]}"; do
         if ! [ -x "$(command -v $dep)" ]; then
-            echo "$dep is not installed. Installing..."
+            print_info "$dep is not installed. Installing..."
             if [[ "$os" == "linux" ]]; then
                 sudo apt-get install -y $dep
             elif [[ "$os" == "mac" ]]; then
@@ -62,12 +62,14 @@ install_dependencies() {
                 echo "$dep is not supported on Windows. Please install it manually."
                 exit 1
             fi
+        else
+            print_info "$dep is already installed."
         fi
     done
 
     # Install Ollama
     if [[ ! -x "$(command -v ollama)" ]]; then
-        echo "Ollama is not installed. Installing..."
+        print_info "Ollama is not installed. Installing..."
         if [[ "$os" == "linux" ]]; then
             curl -fsSL https://ollama.com/install.sh | sh
         elif [[ "$os" == "mac" ]]; then
@@ -80,13 +82,13 @@ install_dependencies() {
 
     # Check if git is installed
     if [[ ! -x "$(command -v git)" ]]; then
-        echo "Git is not installed. Installing..."
+        print_info "Git is not installed. Installing..."
         if [[ "$os" == "linux" ]]; then
             sudo apt-get install -y git
         elif [[ "$os" == "mac" ]]; then
             brew install git
         elif [[ "$os" == "windows" ]]; then
-            echo "Git is not supported on Windows. Please install it manually."
+            print_error "Git is not supported on Windows. Please install it manually."
             exit 1
         fi
     fi
@@ -94,7 +96,7 @@ install_dependencies() {
     # check if "ollama-get-models" directory is not present.
     # If so, clone the repository.
     if [[ ! -d "ollama-get-models" ]]; then
-        echo "ollama-get-models directory not found. Cloning..."
+        print_info "ollama-get-models directory not found. Cloning..."
         git clone https://github.com/webfarmer/ollama-get-models.git
         # GH CLI: gh repo clone webfarmer/ollama-get-models
 
@@ -108,7 +110,7 @@ install_dependencies() {
         if [ -f "./code/ollama_models.json" ]; then
             echo "Models file found."
         else
-            echo "Models file not found. Exiting..."
+            print_error "Models file not found. Exiting..."
             exit 1
         fi
     fi
@@ -125,7 +127,7 @@ install_dependencies() {
             echo "If you are missing pbcopy, please ensure you are running macOS or install it via Xcode Command Line Tools."
         fi
     elif [[ "$os" == "windows" ]]; then
-        echo "Clipboard utility is not supported on Windows. Please install it manually."
+        print_error "Clipboard utility is not supported on Windows. Please install it manually."
         exit 1
     fi
 
