@@ -1,4 +1,14 @@
 #!/bin/bash
+# SCRIPT: run.sh
+# DESCRIPTION: Script to run the Ollama model and make a curl request to the endpoint.
+# USAGE: ./run.sh [-h] [-i] [-m <model>] [-p <prompt>]
+# PARAMETERS:
+# -i                : install,
+# -m <model>        : run specific model
+# -p <prompt>       : prompt to use 
+# -h                : show help
+# EXAMPLE: ./run -i -m llama3 -p "Hello, how are you?"
+# ----------------------------------------------------
 
 source ./include.sh
 
@@ -10,11 +20,7 @@ DEFAULT_MODEL="llama3"
 # -p <prompt>       : prompt to use 
 
 help() {
-    echo "Usage: $0 [-i] [-m <model>] [-p <prompt>]"
-    echo "Options:"
-    echo "  -i                : Install dependencies"
-    echo "  -m <model>        : Run specific model"
-    echo "  -p <prompt>       : Prompt to use"
+    display_help
     exit 1
 }
 
@@ -24,7 +30,7 @@ run_model=0
 run_prompt=0
 
 # Get the options
-while getopts "im:p:" opt; do
+while getopts "him:p:" opt; do
     case ${opt} in
         i)
             run_install=1
@@ -36,6 +42,9 @@ while getopts "im:p:" opt; do
         p)
             run_prompt=1
             prompt=$OPTARG
+            ;;
+        h)
+            help
             ;;
         \?)
             echo "Invalid option: $OPTARG" 1>&2
@@ -55,6 +64,7 @@ if [ ! -f ".env" ]; then
     cp .env.example.txt .env
 fi
 
+# Model file path.
 MODEL_FILE="./ollama-get-models/code/ollama_models.json"
 if [ ! -f "$MODEL_FILE" ]; then
     echo "No models.json file found. Exiting..."
@@ -65,8 +75,9 @@ fi
 jq -S 'sort_by(.name)' ${MODEL_FILE} > ${MODEL_FILE}.tmp
 mv ${MODEL_FILE}.tmp ${MODEL_FILE}
 
-# OLD implementation: using manually entered models.json file.
-# Process all the models from models.json file and display them as options in the Dialog. 
+# Alternative implementation: using manually entered models.json file.
+# Process all the models from models.json file and display them as options in the Dialog.
+# Drawback: This file will need manual updates. It will not include all the models currently available on ollama. Also, the models.json file is not in the same format as the one used in the rest of the script. It won't allow selection of the sizes. 
 # Use jq to parse the json file and display the options in dialog.
 # Provide the details in the options: name, parameters, memory.
 # Store the selected model in a variable ${selected_model}.
@@ -80,7 +91,7 @@ mv ${MODEL_FILE}.tmp ${MODEL_FILE}
 
 source .env
 
-options=$(jq -r '.[] | "\(.name) \(.tags) \(.sizes)"' ${MODEL_FILE})
+options=$(jq -r '.[] | "\(.name) sizes:\t\(.sizes)"' ${MODEL_FILE})
 menu_items=()
 
 # ----------------- MODEL -----------------

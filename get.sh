@@ -1,20 +1,37 @@
 #!/bin/bash
+# SCRIPT: get.sh
+# DESCRIPTION: Script to download a model from the Ollama website.
+# USAGE: ./get.sh [-m <model>] [-u <url>] [-d <dir>]
+# PARAMETERS:
+# -m <model>        : model name (default: llama3)
+# -u <url>          : model url (if not in the list)
+# -d <dir>          : directory to download the model to (default: current directory)
+# EXAMPLE: ./get.sh -m llama3 -d /path/to/download
+# ----------------------------------------------------
+# This script downloads a model from the Ollama website.
+# It uses curl to download the model and tar to extract it.
+
+source ./include.sh
+source ./.env
 
 # Download the model to a designated location.
 # Uses dialog to select where to download, and a progress bar to show the download progress.
-
-# parameters:
-# -m <model>: model name
-# -u <url>: model url (if not in the list)
-# -d <dir>: directory to download the model to
 
 # Default values
 model="llama3"
 url=""
 
+help() {
+    display_help
+    exit 1
+}
+
 # Parse the arguments
-while getopts "m:u:d:" opt; do
+while getopts "hm:u:d:" opt; do
     case ${opt} in
+        h)
+            help
+            ;;
         m )
             model=$OPTARG
             url="https://ollama.com/models/${model}.tar.gz"
