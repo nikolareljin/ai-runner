@@ -98,6 +98,10 @@ install_dependencies() {
     if [[ ! -d "ollama-get-models" ]]; then
         print_info "ollama-get-models directory not found. Cloning..."
         git clone https://github.com/webfarmer/ollama-get-models.git
+        if [ $? -ne 0 ]; then
+            print_error "Failed to clone ollama-get-models repository. Exiting..."
+            exit 1
+        fi
         # GH CLI: gh repo clone webfarmer/ollama-get-models
 
         # Now, scrape the models from the website and store them in models.json file.
