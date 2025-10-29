@@ -152,13 +152,13 @@ install_dependencies() {
 
     # Upgrade Nodejs to version 20.
     if [[ "$os" == "linux" || "$os" == "wsl" ]]; then
-        if ! [ -x "$(command -v node)" ] || [[ "$(node -v | sed 's/v//' | cut -d. -f1)" -lt 20 ]]; then
+        if ! command -v node >/dev/null 2>&1 || [[ "$(node -v | sed 's/v//' | cut -d. -f1)" -lt 20 ]]; then
             echo "Node.js is not installed or is outdated. Installing/upgrading to Node.js 20..."
             curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
             sudo apt-get install -y nodejs
         fi
     elif [[ "$os" == "mac" ]]; then
-        if ! [ -x "$(command -v node)" ] || [[ "$(node -v | sed 's/v//' | cut -d. -f1)" -lt 20 ]]; then
+        if ! command -v node >/dev/null 2>&1 || [[ "$(node -v | sed 's/v//' | cut -d. -f1)" -lt 20 ]]; then
             echo "Node.js is not installed or is outdated. Installing/upgrading to Node.js 20..."
             brew install node@20
         fi
