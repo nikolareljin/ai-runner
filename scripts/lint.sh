@@ -11,7 +11,7 @@ fi
 # Collect tracked shell scripts
 readarray -t FILES < <(git ls-files '*.sh')
 
-if [ -z "${FILES}" ]; then
+if [ "${#FILES[@]}" -eq 0 ]; then
   echo "No shell scripts found."
   exit 0
 fi
