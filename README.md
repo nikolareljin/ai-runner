@@ -63,6 +63,7 @@ Examples:
 
 Notes:
 - The script creates the destination directory if it does not exist and extracts the archive there.
+- If you run without flags, it opens a dialog to select a model (and size) from the indexed list and chooses a default destination like `./models/<model>-<size>`.
 - To run a model with Ollama, prefer `./run` to select and pull a model (internally uses `ollama pull`), e.g.:
 
 ```sh
@@ -70,6 +71,7 @@ Notes:
 ```
 
 - Some tar URLs may not be publicly available for all models; in such cases use `./run` or `ollama pull <model>:<tag>`.
+- If a direct tar URL is unavailable (non-gzip response), the script falls back to `ollama pull <model>:<tag>` and, when supported, `ollama export` to save an `.ollama` file in your destination.
 - Optional: you can track a local path in `.env` via `model_path=./models/<name>` for your own workflows (not required by `./run`).
 
 ## get.sh help

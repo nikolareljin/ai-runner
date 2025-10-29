@@ -9,6 +9,8 @@
 - Tooling: add `get` → `get.sh` symlink and document the alias.
 - OS Support: add WSL2 detection and support in `include.sh` (clipboard via `clip.exe`, dependency installs), skip Ollama install inside WSL2, and update `run.sh` to gracefully skip `ollama` CLI when unavailable.
 - Docs: add Supported OS sections to README and AGENTS.md (macOS, Linux, WSL2).
+- Feature: make `get.sh` interactive (like `run.sh`) when no flags are provided: select model and size from index, derive download URL, and extract to `./models/<model>[-<size>]`.
+- Enhancement: validate downloads, detect non-gzip responses, and fallback to `ollama pull` + `ollama export` when available; document behavior in README.
 
 ## 2025-10-01
 - Merge PR #5 to update model/run flow.
