@@ -24,6 +24,11 @@ Example:
 ./run
 ```
 
+If NO MODEL was selected, a selector will be displayed - so you can pick one that is available on Ollama:
+
+<img width="1121" height="566" alt="image" src="https://github.com/user-attachments/assets/661c89a0-a6cb-46e7-8b8c-fdf89c95d95e" />
+
+
 # Run the prompt in existing model
 
 If you already set up the model, size and have run the steps under `./run`, you can run the prompt directly, using the Curl request and see the results in the dialog:
