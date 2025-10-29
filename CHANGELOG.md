@@ -1,5 +1,71 @@
 # CHANGELOG
 
+## 2025-10-29
+- Docs: add AGENTS.md with repo-specific contributor guidelines.
+- CI: introduce ShellCheck workflow and enforce strict checks on PRs.
+- Tooling: add `scripts/lint.sh` and document linting in AGENTS.md.
+- Templates: add `.github/pull_request_template.md` to standardize PRs.
+- Docs: update README with `get.sh` usage, help, and `./get` alias.
+- Tooling: add `get` → `get.sh` symlink and document the alias.
+- OS Support: add WSL2 detection and support in `include.sh` (clipboard via `clip.exe`, dependency installs), skip Ollama install inside WSL2, and update `run.sh` to gracefully skip `ollama` CLI when unavailable.
+- Docs: add Supported OS sections to README and AGENTS.md (macOS, Linux, WSL2).
+
+## 2025-10-01
+- Merge PR #5 to update model/run flow.
+- Refine `include.sh` dependency helpers.
+
+## 2025-07-03
+- Standardize logging in `install_dependencies()` using `print_*` helpers.
+
+## 2025-07-02
+- Fix dependency installation logic in `include.sh`.
+
+## 2025-07-01
+- Improve `prompt.sh` behavior and help info.
+
+## 2025-06-30
+- Enhance `prompt.sh` (multi-line input, sanitization) and `run.sh` UX.
+- Update `include.sh` utilities and color helpers; adjust CHANGELOG.
+- Add `tests/test-chat-completions.sh` and refine messages.
+
+## 2025-06-09
+- Clean up color-print helpers and usage.
+
+## 2025-05-19
+- Add test scripts for chat endpoints (Bash, Python, Node).
+
+## 2025-05-11
+- Update README (usage, endpoints); add helper info for `get.sh`.
+
+## 2025-05-09
+- Improve help display in `include.sh`; add header-driven `display_help`.
+
+## 2025-05-08
+- Introduce shared helper library; copy responses to clipboard.
+- Add README curl examples; general cleanup; merge PR #4.
+
+## 2025-05-07
+- Add `./prompt` script; update README and CHANGELOG.
+- Update `run.sh`: model size selection, sort models, improve flow; merges PRs #2/#3.
+
+## 2025-05-06
+- Add `size` to `.env` template and selection in `run.sh`.
+
+## 2025-05-05
+- Add `./run` symlink; update models configuration.
+
+## 2025-02-06
+- Update and fix available model lists; chmod tweaks; WIP run/get improvements.
+
+## 2025-02-03
+- Update setup and install scripts; merge PR #1.
+
+## 2025-01-23
+- Bootstrap repo: add `.gitignore`, README, and setup script.
+
+## 2024-12-07
+- Initialize master branch and CHANGELOG.
+
 ## Update helper methods, display of help, sanitization, multi-line entry
 - `tests/test-chat-python.py` -	Added a Python test for chat completion.
 - `tests/test-chat-javascript.js` -	Added a JavaScript test for chat completion.

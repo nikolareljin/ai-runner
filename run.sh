@@ -54,7 +54,7 @@ while getopts "him:p:" opt; do
 done
 
 # Install llama and its dependencies
-if [[ 1 == ${run_install} ]]; then
+if [[ ${run_install} -eq 1 ]]; then
     install_dependencies
 fi
 
@@ -72,8 +72,8 @@ if [ ! -f "$MODEL_FILE" ]; then
 fi
 
 # Re-format the model file - sort by model name.
-jq -S 'sort_by(.name)' ${MODEL_FILE} > ${MODEL_FILE}.tmp
-mv ${MODEL_FILE}.tmp ${MODEL_FILE}
+jq -S 'sort_by(.name)' "${MODEL_FILE}" > "${MODEL_FILE}.tmp"
+mv "${MODEL_FILE}.tmp" "${MODEL_FILE}"
 
 # Alternative implementation: using manually entered models.json file.
 # Process all the models from models.json file and display them as options in the Dialog.
@@ -91,11 +91,18 @@ mv ${MODEL_FILE}.tmp ${MODEL_FILE}
 
 source .env
 
-options=$(jq -r '.[] | "\(.name) sizes:\t\(.sizes)"' ${MODEL_FILE})
+options=$(jq -r '.[] | "\(.name) sizes:\t\(.sizes)"' "${MODEL_FILE}")
 menu_items=()
 
 # ----------------- MODEL -----------------
 current_model=$(grep -oP '^model=\K.*' .env)
+# If -m was provided, prefer it; otherwise fall back to DEFAULT_MODEL if empty
+if [[ ${run_model} -eq 1 && -n "${model:-}" ]]; then
+    current_model="$model"
+fi
+if [[ -z "$current_model" ]]; then
+    current_model="$DEFAULT_MODEL"
+fi
 while IFS= read -r line; do
     key=$(echo "$line" | awk '{print $1}')
     value=$(echo "$line" | awk '{$1=""; print $0}')
@@ -103,10 +110,6 @@ while IFS= read -r line; do
         menu_items+=("$key" "$value" "on")
     else
         menu_items+=("$key" "$value" "off")
-    fi
-    # Preselect the current model if it matches
-    if [[ "$key" == "$current_model" ]]; then
-        preselected_model="$key"
     fi
 done <<< "$options"
 
@@ -130,7 +133,7 @@ fi
 
 # ----------------- SIZE -----------------
 # Extract sizes for the selected model using jq
-sizes=$(jq -r --arg model "$selected_model" '.[] | select(.name == $model) | .sizes[]' ${MODEL_FILE})
+sizes=$(jq -r --arg model "$selected_model" '.[] | select(.name == $model) | .sizes[]' "${MODEL_FILE}")
 # echo "Sizes for the selected model: $sizes"
 # exit 2
 
@@ -176,7 +179,7 @@ fi
 
 # ------------- PROMPT -----------------
 # Create the prompt using dialog and send the curl request
-if [[ 1 != ${run_prompt} ]]; then
+if [[ ${run_prompt} -ne 1 ]]; then
     dialog --inputbox "Enter a prompt" ${DIALOG_HEIGHT} ${DIALOG_WIDTH} 2> /tmp/prompt.txt
     prompt=$(cat /tmp/prompt.txt)
 fi
@@ -194,11 +197,14 @@ if [[ -z "$selected_model" ]]; then
     exit 1
 
 else 
-    # Pull the selected model
-    ollama pull "$selected_model:$selected_size"
-
-    # Run the selected model
-    ollama run ${selected_model}:$selected_size &
+    if command -v ollama >/dev/null 2>&1; then
+        # Pull the selected model
+        ollama pull "$selected_model:$selected_size"
+        # Run the selected model
+        ollama run "${selected_model}:${selected_size}" &
+    else
+        print_warning "Ollama CLI not found. Skipping pull/run. If you are on WSL2, ensure the Windows Ollama app is installed, running, and the model is available. Proceeding to call the API at http://localhost:11434."
+    fi
 fi
 
 # ---------- CURL request to endpoint -----------------
@@ -206,9 +212,7 @@ fi
 curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"${selected_model}\",  \"prompt\":\"${prompt}\", \"stream\": false}" > ./response.json
 
 # Write the response in nice format with jq tool.
-jq -r '.response' response.json > /tmp/response.txt
-# Check if the response was successful
-if [ $? -eq 0 ]; then
+if jq -r '.response' ./response.json > /tmp/response.txt; then
     echo "Response received successfully."
 else
     echo "Error receiving response."
@@ -235,12 +239,14 @@ dialog --title "Response" --msgbox "$formatted_response" ${DIALOG_HEIGHT} ${DIAL
 formatted_md_response=$(format_md_response "$response")
 
 # Display the response in a markdown format
-echo "## Response" > /tmp/response.md
-echo "### Model: ${selected_model}" >> /tmp/response.md
-echo "### Size: ${selected_size}" >> /tmp/response.md
-echo "### Prompt: ${prompt}" >> /tmp/response.md
-echo "### Response:" >> /tmp/response.md
-echo "$formatted_md_response" >> /tmp/response.md
+{
+echo "## Response"
+echo "### Model: ${selected_model}"
+echo "### Size: ${selected_size}"
+echo "### Prompt: ${prompt}"
+echo "### Response:"
+echo "$formatted_md_response"
+} > /tmp/response.md
 
 # Grab the results.
 
@@ -251,4 +257,3 @@ ollama ps
 
 # Remove the temporary prompt file
 rm -f /tmp/prompt.txt
-
