@@ -66,13 +66,11 @@ fi
 echo "Downloading model $model from $url to $dir"
 
 # Download the model
-curl -L "$url" | tar -xz -C "$dir"
-
-# Check if the download was successful
-if [ $? -eq 0 ]; then
+if curl -L "$url" | tar -xz -C "$dir"; then
     echo "Model $model downloaded successfully."
 else
     echo "Error downloading model $model."
+    exit 1
 fi
 
 # End of script

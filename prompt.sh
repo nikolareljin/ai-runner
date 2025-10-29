@@ -11,6 +11,14 @@
 source ./include.sh
 source ./.env
 
+# Ensure model is set (from .env) or default
+if [[ -z "${model:-}" ]]; then
+    if [ -f ./.env ]; then
+        model=$(grep -oP '^model=\K.*' ./.env 2>/dev/null || true)
+    fi
+    model=${model:-llama3}
+fi
+
 help() {
     display_help
     exit 1
@@ -41,10 +49,12 @@ if [[ -z "$prompt" ]]; then
     # prompt=$(dialog --inputbox "Enter your prompt:" $DIALOG_HEIGHT $DIALOG_WIDTH 3>&1 1>&2 2>&3)
     
     # Multi-line input box using dialog and tmp file.
-    tmpfile=$(mktemp)
+    tmpin=$(mktemp)
+    tmpout=$(mktemp)
+    : > "$tmpin"
     # Use dialog to create an edit box for the prompt input and store result in the temporary file
-    dialog --title "Enter your prompt" --editbox "$tmpfile" $DIALOG_HEIGHT $DIALOG_WIDTH 2> "$tmpfile"
-    prompt=$(cat "$tmpfile")
+    dialog --title "Enter your prompt" --editbox "$tmpin" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 2> "$tmpout"
+    prompt=$(cat "$tmpout")
     # Sanitize the prompt by removing quotes and newlines
     prompt=$(echo "$prompt" | tr -d '"' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     if [[ -z "$prompt" ]]; then
@@ -52,7 +62,7 @@ if [[ -z "$prompt" ]]; then
         exit 1
     fi
     # Remove the temporary file
-    rm -f "$tmpfile"
+    rm -f "$tmpin" "$tmpout"
 fi
 
 # using existing ollama service, make a query to the endpoint with the prompt and display the response.
@@ -67,7 +77,7 @@ else
 fi
 # Check if the response is empty
 if [[ -z "$response" ]] || [[ "$response" == "null" ]]; then
-    print_color $COLOR_RED "No response received. Exiting..." "Try again with a different prompt or check if the available memory is sufficient."
+    print_color "$COLOR_RED" "No response received. Exiting..." "Try again with a different prompt or check if the available memory is sufficient."
     exit 1
 fi
 # Display the response in a dialog box

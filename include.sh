@@ -53,7 +53,8 @@ get_os(){
 # It also checks if the ollama-get-models directory is present. If not, it clones the repository.
 # It also scrapes the models from the website and stores them in models.json file.
 install_dependencies() {
-    local os=$(get_os)
+    local os
+    os=$(get_os)
     # Dependencies: dialog, curl, jq, python3, pip3, ollama, nodejs, npx
     local dependencies=(dialog curl jq python3 python3-pip nodejs)
 
@@ -107,8 +108,7 @@ install_dependencies() {
     # If so, clone the repository.
     if [[ ! -d "ollama-get-models" ]]; then
         print_info "ollama-get-models directory not found. Cloning..."
-        git clone https://github.com/webfarmer/ollama-get-models.git
-        if [ $? -ne 0 ]; then
+        if ! git clone https://github.com/webfarmer/ollama-get-models.git; then
             print_error "Failed to clone ollama-get-models repository. Exiting..."
             exit 1
         fi
@@ -116,7 +116,7 @@ install_dependencies() {
 
         # Now, scrape the models from the website and store them in models.json file.
         # Check if jq is installed
-        cd ollama-get-models
+        cd ollama-get-models || exit
         # Run the python script to scrape the models
         # Now pull the models from the website and store them in models.json file.
         python3 get_ollama_models.py
@@ -248,7 +248,9 @@ format_md_response() {
     # Check if the response is in MD format
     if [[ "$response" == *"\`\`\`"* ]]; then
         # Format the response to be displayed in the dialog box
-        formatted_response=$(echo "$response" | sed "s/\`\`\`//g")
+        local bt='```'
+        local formatted_response
+        formatted_response=${response//${bt}/}
         echo "$formatted_response"
     else
         echo "$response"
@@ -268,6 +270,8 @@ COLOR_GREY="\033[90m"
 COLOR_BOLD="\033[1m"
 COLOR_UNDERLINE="\033[4m"
 COLOR_RESET="\033[0m"
+# Mark potentially unused constants as intentionally referenced
+: "$COLOR_BLUE" "$COLOR_CYAN" "$COLOR_MAGENTA" "$COLOR_BOLD" "$COLOR_UNDERLINE"
 # --------------------------------------------------
 # Print the text in different colors.
 # It uses ANSI escape codes to print the text in different colors.
@@ -300,21 +304,21 @@ print_color() {
 }
 
 print_info() {
-    print_color $COLOR_WHITE "[Info]: $1"
+    print_color "$COLOR_WHITE" "[Info]: $1"
 }
 
 print_error() {
-    print_color $COLOR_RED "[Error!]: $1"
+    print_color "$COLOR_RED" "[Error!]: $1"
     # Add bell sound
     printf '\a'
 }
 
 print_success() {
-    print_color $COLOR_GREEN "Success [OK]: $1"
+    print_color "$COLOR_GREEN" "Success [OK]: $1"
 }
 
 print_warning() {
-    print_color $COLOR_YELLOW "[Warning!]: $1"
+    print_color "$COLOR_YELLOW" "[Warning!]: $1"
     # Add bell sound
     printf '\a'
 }
@@ -352,12 +356,12 @@ display_help() {
     script_example=$(grep "^# EXAMPLE:" "$0" | cut -d ":" -f 2 | sed 's/^ *//g')
 
     # Display the help information. Use regular echo with colors (and not dialog).
-    print_color $COLOR_GREEN "Script Name:" " $script_name"
-    print_color $COLOR_GREEN "Description:" " $script_description"
-    print_color $COLOR_GREEN "Usage:" " $script_usage"
-    if [[ ! -z "$script_parameters" ]]; then
-        print_color $COLOR_WHITE "Parameters:" "$script_parameters"
+    print_color "$COLOR_GREEN" "Script Name:" " $script_name"
+    print_color "$COLOR_GREEN" "Description:" " $script_description"
+    print_color "$COLOR_GREEN" "Usage:" " $script_usage"
+    if [[ -n "$script_parameters" ]]; then
+        print_color "$COLOR_WHITE" "Parameters:" "$script_parameters"
     fi
-    print_color $COLOR_YELLOW "Example:" " $script_example"
-    print_color $COLOR_WHITE "----------------------------------------------------"
+    print_color "$COLOR_YELLOW" "Example:" " $script_example"
+    print_color "$COLOR_WHITE" "----------------------------------------------------"
 }

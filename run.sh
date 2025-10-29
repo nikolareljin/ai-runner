@@ -96,6 +96,13 @@ menu_items=()
 
 # ----------------- MODEL -----------------
 current_model=$(grep -oP '^model=\K.*' .env)
+# If -m was provided, prefer it; otherwise fall back to DEFAULT_MODEL if empty
+if [[ ${run_model} -eq 1 && -n "${model:-}" ]]; then
+    current_model="$model"
+fi
+if [[ -z "$current_model" ]]; then
+    current_model="$DEFAULT_MODEL"
+fi
 while IFS= read -r line; do
     key=$(echo "$line" | awk '{print $1}')
     value=$(echo "$line" | awk '{$1=""; print $0}')
@@ -103,10 +110,6 @@ while IFS= read -r line; do
         menu_items+=("$key" "$value" "on")
     else
         menu_items+=("$key" "$value" "off")
-    fi
-    # Preselect the current model if it matches
-    if [[ "$key" == "$current_model" ]]; then
-        preselected_model="$key"
     fi
 done <<< "$options"
 
@@ -198,7 +201,7 @@ else
         # Pull the selected model
         ollama pull "$selected_model:$selected_size"
         # Run the selected model
-        ollama run ${selected_model}:$selected_size &
+        ollama run "${selected_model}:${selected_size}" &
     else
         print_warning "Ollama CLI not found. Skipping pull/run. If you are on WSL2, ensure the Windows Ollama app is installed, running, and the model is available. Proceeding to call the API at http://localhost:11434."
     fi
@@ -236,12 +239,14 @@ dialog --title "Response" --msgbox "$formatted_response" ${DIALOG_HEIGHT} ${DIAL
 formatted_md_response=$(format_md_response "$response")
 
 # Display the response in a markdown format
-echo "## Response" > /tmp/response.md
-echo "### Model: ${selected_model}" >> /tmp/response.md
-echo "### Size: ${selected_size}" >> /tmp/response.md
-echo "### Prompt: ${prompt}" >> /tmp/response.md
-echo "### Response:" >> /tmp/response.md
-echo "$formatted_md_response" >> /tmp/response.md
+{
+echo "## Response"
+echo "### Model: ${selected_model}"
+echo "### Size: ${selected_size}"
+echo "### Prompt: ${prompt}"
+echo "### Response:"
+echo "$formatted_md_response"
+} > /tmp/response.md
 
 # Grab the results.
 
