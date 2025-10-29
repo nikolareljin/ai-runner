@@ -59,8 +59,7 @@ fi
 curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"${model}\",  \"prompt\":\"${prompt}\", \"stream\": false}" > ./response.json
 
 # Read the response from the file and display it in a dialog box.
-response=$(jq -r '.response' response.json)
-if [ $? -eq 0 ]; then
+if response=$(jq -r '.response' "./response.json"); then
     echo "Response received."
 else
     echo "Error receiving response."

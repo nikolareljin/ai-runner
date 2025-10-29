@@ -20,6 +20,7 @@ source ./.env
 # Default values
 model="llama3"
 url=""
+dir="."
 
 help() {
     display_help
@@ -49,17 +50,23 @@ while getopts "hm:u:d:" opt; do
     esac
 done
 
+# Validate input
+if [[ -z "$url" ]]; then
+    print_error "No download URL provided. Use -m <model> or -u <url>."
+    exit 1
+fi
+
 # Check if the directory exists
 if [ ! -d "$dir" ]; then
     echo "Directory $dir does not exist. Creating..."
-    mkdir -p $dir
+    mkdir -p "$dir"
 fi
 
 # Download the model
 echo "Downloading model $model from $url to $dir"
 
 # Download the model
-curl -L $url | tar -xz -C $dir
+curl -L "$url" | tar -xz -C "$dir"
 
 # Check if the download was successful
 if [ $? -eq 0 ]; then

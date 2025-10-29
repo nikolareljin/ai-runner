@@ -21,18 +21,24 @@ fi
 # ---------------------------------------------------
 # Helper methods for the scripts used in the project.
 # ---------------------------------------------------
+# OS detection helpers
+# Detect if running inside WSL(2)
+is_wsl() {
+    # Heuristics: /proc/version contains "microsoft" or env WSL_DISTRO_NAME is set
+    grep -qi "microsoft" /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]
+}
+
 # Get the OS type.
-# This function checks the OS type and returns it.
-# It supports Linux, MacOS, and Windows.
-# It also checks if the OS is supported. If not, it exits the script.
+# Returns one of: linux | mac | wsl | windows
 get_os(){
-    # Check if the OS is Linux
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "linux"
-    # Check if the OS is MacOS
+        if is_wsl; then
+            echo "wsl"
+        else
+            echo "linux"
+        fi
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         echo "mac"
-    # Check if the OS is Windows
     elif [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" ]]; then
         echo "windows"
     else
@@ -52,14 +58,15 @@ install_dependencies() {
     local dependencies=(dialog curl jq python3 python3-pip nodejs)
 
     for dep in "${dependencies[@]}"; do
-        if ! [ -x "$(command -v $dep)" ]; then
+        if ! command -v "$dep" >/dev/null 2>&1; then
             print_info "$dep is not installed. Installing..."
-            if [[ "$os" == "linux" ]]; then
-                sudo apt-get install -y $dep
+            if [[ "$os" == "linux" || "$os" == "wsl" ]]; then
+                sudo apt-get update -y >/dev/null 2>&1 || true
+                sudo apt-get install -y "$dep"
             elif [[ "$os" == "mac" ]]; then
-                brew install $dep
+                brew install "$dep"
             elif [[ "$os" == "windows" ]]; then
-                echo "$dep is not supported on Windows. Please install it manually."
+                print_error "Native Windows is not supported. Use WSL2 (supported) or macOS/Linux."
                 exit 1
             fi
         else
@@ -67,28 +74,31 @@ install_dependencies() {
         fi
     done
 
-    # Install Ollama
-    if [[ ! -x "$(command -v ollama)" ]]; then
-        print_info "Ollama is not installed. Installing..."
+    # Install Ollama (skip inside WSL2; use Windows Ollama app instead)
+    if ! command -v ollama >/dev/null 2>&1; then
         if [[ "$os" == "linux" ]]; then
+            print_info "Installing Ollama for Linux..."
             curl -fsSL https://ollama.com/install.sh | sh
         elif [[ "$os" == "mac" ]]; then
+            print_info "Installing Ollama for macOS..."
             brew install ollama/tap/ollama
+        elif [[ "$os" == "wsl" ]]; then
+            print_warning "WSL2 detected: Skipping Ollama CLI install in WSL. Install and run Ollama on Windows host, which exposes http://localhost:11434 accessible from WSL."
         elif [[ "$os" == "windows" ]]; then
-            echo "Ollama is not supported on Windows. Please install it manually."
+            print_error "Native Windows is not supported. Use the Windows Ollama app from Windows and run this project within WSL2."
             exit 1
         fi
     fi
 
     # Check if git is installed
-    if [[ ! -x "$(command -v git)" ]]; then
+    if ! command -v git >/dev/null 2>&1; then
         print_info "Git is not installed. Installing..."
-        if [[ "$os" == "linux" ]]; then
+        if [[ "$os" == "linux" || "$os" == "wsl" ]]; then
             sudo apt-get install -y git
         elif [[ "$os" == "mac" ]]; then
             brew install git
         elif [[ "$os" == "windows" ]]; then
-            print_error "Git is not supported on Windows. Please install it manually."
+            print_error "Native Windows is not supported. Use WSL2 or macOS/Linux."
             exit 1
         fi
     fi
@@ -119,24 +129,29 @@ install_dependencies() {
         fi
     fi
 
-    # Install the clipboard utility
+    # Clipboard utilities
     if [[ "$os" == "linux" ]]; then
-        if ! [ -x "$(command -v xclip)" ]; then
-            echo "xclip is not installed. Installing..."
+        if ! command -v xclip >/dev/null 2>&1; then
+            print_info "Installing xclip for clipboard support..."
             sudo apt-get install -y xclip
         fi
     elif [[ "$os" == "mac" ]]; then
-        if ! [ -x "$(command -v pbcopy)" ]; then
-            echo "pbcopy is not installed. It should be available by default on macOS."
-            echo "If you are missing pbcopy, please ensure you are running macOS or install it via Xcode Command Line Tools."
+        if ! command -v pbcopy >/dev/null 2>&1; then
+            print_warning "pbcopy not found. It should be present on macOS (Xcode CLT)."
+        fi
+    elif [[ "$os" == "wsl" ]]; then
+        if command -v clip.exe >/dev/null 2>&1; then
+            print_info "WSL2: Using Windows clipboard via clip.exe."
+        else
+            print_warning "WSL2: clip.exe not found; clipboard copy will be disabled."
         fi
     elif [[ "$os" == "windows" ]]; then
-        print_error "Clipboard utility is not supported on Windows. Please install it manually."
+        print_error "Native Windows is not supported. Use WSL2."
         exit 1
     fi
 
     # Upgrade Nodejs to version 20.
-    if [[ "$os" == "linux" ]]; then
+    if [[ "$os" == "linux" || "$os" == "wsl" ]]; then
         if ! [ -x "$(command -v node)" ] || [[ "$(node -v | sed 's/v//' | cut -d. -f1)" -lt 20 ]]; then
             echo "Node.js is not installed or is outdated. Installing/upgrading to Node.js 20..."
             curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
@@ -153,9 +168,9 @@ install_dependencies() {
     fi
 
     # Install npx.
-    if [[ ! -x "$(command -v npx)" ]]; then
+    if ! command -v npx >/dev/null 2>&1; then
         echo "npx is not installed. Installing..."
-        if [[ "$os" == "linux" ]]; then
+        if [[ "$os" == "linux" || "$os" == "wsl" ]]; then
             sudo apt-get install -y npm
         elif [[ "$os" == "mac" ]]; then
             brew install npm
@@ -166,9 +181,9 @@ install_dependencies() {
     fi
 
     # Install pip3 if not installed
-    if [[ ! -x "$(command -v pip3)" ]]; then
+    if ! command -v pip3 >/dev/null 2>&1; then
         echo "pip3 is not installed. Installing..."
-        if [[ "$os" == "linux" ]]; then
+        if [[ "$os" == "linux" || "$os" == "wsl" ]]; then
             sudo apt-get install -y python3-pip
         elif [[ "$os" == "mac" ]]; then
             brew install python3
@@ -185,12 +200,16 @@ install_dependencies() {
 # If neither is installed, it exits the script.
 copy_to_clipboard() {
     local response=$1
-    if command -v xclip &> /dev/null; then
+    if command -v xclip >/dev/null 2>&1; then
         echo "$response" | xclip -selection clipboard
         echo "Response copied to clipboard."
-    elif command -v pbcopy &> /dev/null; then
+    elif command -v pbcopy >/dev/null 2>&1; then
         echo "$response" | pbcopy
         echo "Response copied to clipboard."
+    elif command -v clip.exe >/dev/null 2>&1; then
+        # WSL2: forward to Windows clipboard
+        echo "$response" | clip.exe
+        echo "Response copied to Windows clipboard."
     else
         echo "No clipboard utility found. Response not copied."
         exit 1
@@ -273,10 +292,10 @@ print_color() {
 
     if [[ -z "$text2" ]]; then
         # Print the text in the specified color
-        echo -e "${start_color}${text}${COLOR_RESET}"
+        printf '%b\n' "${start_color}${text}${COLOR_RESET}"
     else
         # Print the text in the specified color with a second line
-        echo -e "${start_color}${text}${COLOR_RESET}\n${end_color}${text2}${COLOR_RESET}"
+        printf '%b\n%b\n' "${start_color}${text}${COLOR_RESET}" "${end_color}${text2}${COLOR_RESET}"
     fi
 }
 
@@ -287,7 +306,7 @@ print_info() {
 print_error() {
     print_color $COLOR_RED "[Error!]: $1"
     # Add bell sound
-    echo -e "\a"
+    printf '\a'
 }
 
 print_success() {
@@ -297,7 +316,7 @@ print_success() {
 print_warning() {
     print_color $COLOR_YELLOW "[Warning!]: $1"
     # Add bell sound
-    echo -e "\a"
+    printf '\a'
 }
 
 print_line() {
