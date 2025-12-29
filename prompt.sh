@@ -1,87 +1,96 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # SCRIPT: prompt.sh
-# DESCRIPTION: Script to run the already set up Ollama model and make a curl request to the internal endpoint. NOTE: use command ./run first to select and set the model.
+# DESCRIPTION: Prompt the configured Ollama model via the local API.
 # USAGE: ./prompt.sh [-h] [-p "<prompt>"]
 # PARAMETERS:
-# -p "<prompt>"     : prompt to use
+# -p "<prompt>"     : prompt to send (skips dialog)
 # -h                : show help
 # EXAMPLE: ./prompt.sh -p "What is the meaning of life?"
 # ----------------------------------------------------
+set -euo pipefail
 
-source ./include.sh
-source ./.env
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_HELPERS_DIR="${SCRIPT_HELPERS_DIR:-$SCRIPT_DIR/scripts/script-helpers}"
+# shellcheck source=/dev/null
+source "$SCRIPT_HELPERS_DIR/helpers.sh"
+shlib_import logging dialog os env json file deps ollama help clipboard
 
-# Ensure model is set (from .env) or default
-if [[ -z "${model:-}" ]]; then
-    if [ -f ./.env ]; then
-        model=$(grep -oP '^model=\K.*' ./.env 2>/dev/null || true)
+ENV_FILE="$SCRIPT_DIR/.env"
+
+is_wsl() {
+    grep -qi "microsoft" /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]
+}
+
+help() { display_help "$0"; }
+
+copy_to_clipboard_safe() {
+    local text="$1"
+    if is_wsl && command -v clip.exe >/dev/null 2>&1; then
+        printf "%s" "$text" | clip.exe
+        print_info "Copied to Windows clipboard."
+        return 0
     fi
-    model=${model:-llama3}
-fi
-
-help() {
-    display_help
-    exit 1
+    if ! copy_to_clipboard "$text"; then
+        print_warning "Clipboard copy failed."
+        return 1
+    fi
 }
 
 prompt=""
 
-# Get the options
-while getopts "hp:" opt; do
+while getopts ":hp:" opt; do
     case ${opt} in
-        h)
-            help
-            ;;
-        p)
-            prompt=$OPTARG
-            ;;
-        \?)
-            echo "Invalid option: $OPTARG" 1>&2
-            help
-            ;;
+        h) help; exit 0 ;;
+        p) prompt="$OPTARG" ;;
+        :) print_error "Option -$OPTARG requires an argument"; exit 1 ;;
+        \?) print_error "Invalid option: -$OPTARG"; help; exit 1 ;;
     esac
 done
 
+if [[ -f "$ENV_FILE" ]]; then
+    load_env "$ENV_FILE"
+fi
+
+model="$(resolve_env_value "model" "llama3" "$ENV_FILE")"
 
 if [[ -z "$prompt" ]]; then
-    # Get the prompt using the dialog command.
-    # single-line input box.
-    # prompt=$(dialog --inputbox "Enter your prompt:" $DIALOG_HEIGHT $DIALOG_WIDTH 3>&1 1>&2 2>&3)
-    
-    # Multi-line input box using dialog and tmp file.
+    dialog_init
+    check_if_dialog_installed
     tmpin=$(mktemp)
     tmpout=$(mktemp)
     : > "$tmpin"
-    # Use dialog to create an edit box for the prompt input and store result in the temporary file
-    dialog --title "Enter your prompt" --editbox "$tmpin" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 2> "$tmpout"
-    prompt=$(cat "$tmpout")
-    # Sanitize the prompt by removing quotes and newlines
-    prompt=$(echo "$prompt" | tr -d '"' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    if [[ -z "$prompt" ]]; then
-        echo "No prompt provided. Exiting..."
+    if ! dialog --title "Enter your prompt" --editbox "$tmpin" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 2> "$tmpout"; then
+        rm -f "$tmpin" "$tmpout"
+        print_error "Prompt entry cancelled."
         exit 1
     fi
-    # Remove the temporary file
+    prompt=$(cat "$tmpout")
     rm -f "$tmpin" "$tmpout"
+    prompt=$(echo "$prompt" | tr -d '"' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 fi
 
-# using existing ollama service, make a query to the endpoint with the prompt and display the response.
-curl -X POST http://localhost:11434/api/generate -d "{\"model\": \"${model}\",  \"prompt\":\"${prompt}\", \"stream\": false}" > ./response.json
-
-# Read the response from the file and display it in a dialog box.
-if response=$(jq -r '.response' "./response.json"); then
-    echo "Response received."
-else
-    echo "Error receiving response."
+if [[ -z "$prompt" ]]; then
+    print_error "No prompt provided. Exiting."
     exit 1
 fi
-# Check if the response is empty
-if [[ -z "$response" ]] || [[ "$response" == "null" ]]; then
-    print_color "$COLOR_RED" "No response received. Exiting..." "Try again with a different prompt or check if the available memory is sufficient."
+
+escaped_prompt=$(json_escape "$prompt")
+payload="{\"model\":\"${model}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
+if ! curl -sS -X POST http://localhost:11434/api/generate -d "$payload" > "$SCRIPT_DIR/response.json"; then
+    print_error "Failed to reach Ollama API at http://localhost:11434/api/generate"
     exit 1
 fi
-# Display the response in a dialog box
-dialog --title "Response" --msgbox "$response" ${DIALOG_HEIGHT} ${DIALOG_WIDTH}
 
-# Copy the response into clipboard memory. Uses helper method from include.sh
-copy_to_clipboard "$response"
+response_json=$(cat "$SCRIPT_DIR/response.json")
+response=$(format_response "$response_json")
+if [[ -z "$response" || "$response" == "null" ]]; then
+    print_error "No response received."
+    exit 1
+fi
+
+dialog_init
+check_if_dialog_installed
+
+dialog --title "Response" --msgbox "$response" "$DIALOG_HEIGHT" "$DIALOG_WIDTH"
+
+copy_to_clipboard_safe "$response" || true

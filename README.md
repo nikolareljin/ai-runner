@@ -10,6 +10,13 @@ Models available at: https://ollama.com/search
 - Linux
 - WSL2 (Windows via WSL2). Install and run the Windows Ollama app; this project runs inside WSL2 and connects to `http://localhost:11434`.
 
+## Dependencies
+- Initialize the script helpers submodule before running scripts:
+
+```sh
+git submodule update --init --recursive
+```
+
 
 # Run the model and install
 

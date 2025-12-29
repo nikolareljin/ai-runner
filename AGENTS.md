@@ -6,7 +6,7 @@
 ## Project Structure & Module Organization
 - Core scripts: `run.sh` (install, choose model, run + prompt), `prompt.sh` (prompt an existing model), `get.sh` (download a model tar).
 - Symlinks: `run` → `run.sh`, `get` → `get.sh` (both forms work).
-- Shared helpers: `include.sh` (dialog sizing, installers, logging, formatting).
+- Shared helpers: `scripts/script-helpers` submodule (dialog sizing, installers, logging, formatting); `include.sh` is a legacy shim.
 - Config: `.env` (gitignored), seed from `.env.example.txt`.
 - Model index: `ollama-get-models/` (auto-cloned by `./run -i`) produces `./ollama-get-models/code/ollama_models.json`.
 - Tests: `tests/` contains shell, Python, and JS examples.
