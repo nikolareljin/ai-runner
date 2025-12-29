@@ -12,6 +12,12 @@
 - Feature: make `get.sh` interactive (like `run.sh`) when no flags are provided: select model and size from index, derive download URL, and extract to `./models/<model>[-<size>]`.
 - Enhancement: validate downloads, detect non-gzip responses, and fallback to `ollama pull` + `ollama export` when available; document behavior in README.
 
+## 2025-12-29
+- Tooling: add `scripts/script-helpers` submodule and standard loader wiring in scripts.
+- Refactor: migrate bash scripts to `script-helpers` modules (logging, dialog, env, json, ollama, deps).
+- Docs: update script headers to match library help conventions and document submodule init in README.
+- Compatibility: replace `include.sh` with a legacy shim and adjust WSL clipboard handling in scripts.
+
 ## 2025-10-01
 - Merge PR #5 to update model/run flow.
 - Refine `include.sh` dependency helpers.
