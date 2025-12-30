@@ -11,8 +11,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_HELPERS_DIR="${SCRIPT_HELPERS_DIR:-$SCRIPT_DIR/script-helpers}"
 # shellcheck source=/dev/null
-source "$SCRIPT_HELPERS_DIR/helpers.sh"
-shlib_import logging help
+if [ -f "$SCRIPT_HELPERS_DIR/helpers.sh" ]; then
+    source "$SCRIPT_HELPERS_DIR/helpers.sh"
+    shlib_import logging help
+else
+    print_info() { echo "[INFO] $*"; }
+    print_error() { echo "[ERROR] $*" >&2; }
+    display_help() {
+        cat <<'EOF'
+Usage: ./scripts/lint.sh [-h]
+Run ShellCheck on tracked shell scripts.
+EOF
+    }
+fi
 
 help() { display_help "$0"; }
 
