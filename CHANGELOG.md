@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2025-12-30
+- Refactor: move root scripts into `scripts/` and keep entrypoint symlinks (`run`, `get`, `prompt`) at repo root.
+- Tooling: make `scripts/lint.sh` resilient when `scripts/script-helpers` is missing (CI-safe fallback logging).
+- CI: switch ShellCheck workflow to `nikolareljin/ci-helpers` reusable workflow.
+- Docs: update README/AGENTS to prefer symlinked commands and reflect new layout.
+
 ## 2025-10-29
 - Docs: add AGENTS.md with repo-specific contributor guidelines.
 - CI: introduce ShellCheck workflow and enforce strict checks on PRs.
