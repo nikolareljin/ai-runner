@@ -11,12 +11,13 @@ Models available at: https://ollama.com/search
 - WSL2 (Windows via WSL2). Install and run the Windows Ollama app; this project runs inside WSL2 and connects to `http://localhost:11434`.
 
 ## Dependencies
-- Initialize the script helpers submodule before running scripts:
+- Initialize or update the script helpers submodule before running scripts:
 
 ```sh
-git submodule update --init --recursive
+./update
 ```
 
+If you see a "script-helpers dependency not found" message, run `./update` first.
 Core scripts live in `scripts/`; use the root symlinks where possible.
 
 # Run the model and install
