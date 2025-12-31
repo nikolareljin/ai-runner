@@ -17,6 +17,7 @@ Models available at: https://ollama.com/search
 git submodule update --init --recursive
 ```
 
+Core scripts live in `scripts/`; root-level symlinks (`run`, `run.sh`, `prompt`, `prompt.sh`, `get`, `get.sh`) point to them.
 
 # Run the model and install
 
