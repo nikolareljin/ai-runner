@@ -5,7 +5,7 @@
 
 ## Project Structure & Module Organization
 - Core scripts: `scripts/run.sh` (install, choose model, run + prompt), `scripts/prompt.sh` (prompt an existing model), `scripts/get.sh` (download a model tar).
-- Symlinks: `run`, `run.sh`, `prompt`, `prompt.sh`, `get`, `get.sh`, `include.sh` point to the scripts in `scripts/`.
+- Symlinks: `run`, `get`, `prompt` point to the scripts in `scripts/`.
 - Shared helpers: `scripts/script-helpers` submodule (dialog sizing, installers, logging, formatting); `scripts/include.sh` is a legacy shim.
 - Config: `.env` (gitignored), seed from `.env.example.txt`.
 - Model index: `ollama-get-models/` (auto-cloned by `./run -i`) produces `./ollama-get-models/code/ollama_models.json`.
@@ -16,7 +16,7 @@
 - Setup dependencies and model list: `./run -i`
 - Run model + prompt: `./run -m llama3 -p "Hello"`
 - Prompt existing model: `./prompt -p "Why is the sky blue?"` (requires `.env` with `model` and `size`)
-- Download model to folder: `./get.sh -m llama3 -d ./models` (or `./get ...` alias)
+- Download model to folder: `./get -m llama3 -d ./models`
 - Sanity checks: `curl http://localhost:11434/api/tags`, `curl http://localhost:11434/api/generate ...`
 - Run tests/examples:
   - `bash tests/test.sh`

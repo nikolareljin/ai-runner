@@ -17,7 +17,7 @@ Models available at: https://ollama.com/search
 git submodule update --init --recursive
 ```
 
-Core scripts live in `scripts/`; root-level symlinks (`run`, `run.sh`, `prompt`, `prompt.sh`, `get`, `get.sh`) point to them.
+Core scripts live in `scripts/`; use the root symlinks where possible.
 
 # Run the model and install
 
@@ -55,18 +55,16 @@ If you already set up the model, size and have run the steps under `./run`, you 
 
 # Only download the models
 
-Use `./get.sh` to download a model archive (tar.gz) to a local folder for offline use or analysis. This does not install the model into Ollama — use `./run` (or `ollama pull`) to run it. Alias: `./get` is a symlink to `./get.sh`; both forms work.
+Use `./get` to download a model archive (tar.gz) to a local folder for offline use or analysis. This does not install the model into Ollama — use `./run` (or `ollama pull`) to run it.
 
 Examples:
 
 ```sh
 # Download a known model by name to ./models
-./get.sh -m llama3 -d ./models
-# or using the alias:
 ./get -m llama3 -d ./models
 
 # Or provide a direct tar URL (if available)
-./get.sh -u https://ollama.com/models/llama3.tar.gz -d ./models/llama3
+./get -u https://ollama.com/models/llama3.tar.gz -d ./models/llama3
 ```
 
 Notes:
@@ -87,18 +85,16 @@ Notes:
 View usage and options:
 
 ```sh
-./get.sh -h
-# or
 ./get -h
 ```
 
 Summary:
-- Usage: `./get.sh [-m <model>] [-u <url>] [-d <dir>]`
+- Usage: `./get [-m <model>] [-u <url>] [-d <dir>]`
 - Options:
   - `-m <model>`: model name (default: `llama3`)
   - `-u <url>`: direct tar URL (if available)
   - `-d <dir>`: destination directory (created if missing)
-Example: `./get.sh -m llama3 -d ./models`
+Example: `./get -m llama3 -d ./models`
 
 # Run prompts as CURL
 
