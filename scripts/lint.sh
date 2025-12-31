@@ -17,21 +17,9 @@ while [ -h "$SCRIPT_SOURCE" ]; do
     fi
 done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
-SCRIPT_HELPERS_DIR="${SCRIPT_HELPERS_DIR:-$SCRIPT_DIR/script-helpers}"
 # shellcheck source=/dev/null
-if [ -f "$SCRIPT_HELPERS_DIR/helpers.sh" ]; then
-    source "$SCRIPT_HELPERS_DIR/helpers.sh"
-    shlib_import logging help
-else
-    print_info() { echo "[INFO] $*"; }
-    print_error() { echo "[ERROR] $*" >&2; }
-    display_help() {
-        cat <<'EOF'
-Usage: ./scripts/lint.sh [-h]
-Run ShellCheck on tracked shell scripts.
-EOF
-    }
-fi
+source "$SCRIPT_DIR/include.sh"
+load_script_helpers logging help
 
 help() { display_help "$0"; }
 

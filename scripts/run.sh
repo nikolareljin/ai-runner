@@ -20,11 +20,9 @@ while [ -h "$SCRIPT_SOURCE" ]; do
     fi
 done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-SCRIPT_HELPERS_DIR="${SCRIPT_HELPERS_DIR:-$ROOT_DIR/scripts/script-helpers}"
 # shellcheck source=/dev/null
-source "$SCRIPT_HELPERS_DIR/helpers.sh"
-shlib_import logging dialog os env json file deps ollama help clipboard
+source "$SCRIPT_DIR/include.sh"
+load_script_helpers logging dialog os env json file deps ollama help clipboard
 
 DEFAULT_MODEL="llama3"
 ENV_FILE="$ROOT_DIR/.env"
