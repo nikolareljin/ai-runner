@@ -19,9 +19,17 @@ done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCRIPT_HELPERS_DIR="${SCRIPT_HELPERS_DIR:-$ROOT_DIR/scripts/script-helpers}"
-# shellcheck source=/dev/null
-source "$SCRIPT_HELPERS_DIR/helpers.sh"
-shlib_import logging help
+HELPERS_PATH="$SCRIPT_HELPERS_DIR/helpers.sh"
+if [[ -f "$HELPERS_PATH" ]]; then
+    # shellcheck source=/dev/null
+    source "$HELPERS_PATH"
+    shlib_import logging help
+else
+    print_info() { printf "INFO: %s\n" "$1"; }
+    print_success() { printf "OK: %s\n" "$1"; }
+    print_error() { printf "ERROR: %s\n" "$1" >&2; }
+    display_help() { printf "USAGE: %s [-h]\n" "$1"; }
+fi
 
 help() { display_help "$0"; }
 
