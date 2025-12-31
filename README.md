@@ -10,6 +10,14 @@ Models available at: https://ollama.com/search
 - Linux
 - WSL2 (Windows via WSL2). Install and run the Windows Ollama app; this project runs inside WSL2 and connects to `http://localhost:11434`.
 
+## Dependencies
+- Initialize the script helpers submodule before running scripts:
+
+```sh
+git submodule update --init --recursive
+```
+
+Core scripts live in `scripts/`; use the root symlinks where possible.
 
 # Run the model and install
 
@@ -47,22 +55,21 @@ If you already set up the model, size and have run the steps under `./run`, you 
 
 # Only download the models
 
-Use `./get.sh` to download a model archive (tar.gz) to a local folder for offline use or analysis. This does not install the model into Ollama — use `./run` (or `ollama pull`) to run it. Alias: `./get` is a symlink to `./get.sh`; both forms work.
+Use `./get` to download a model archive (tar.gz) to a local folder for offline use or analysis. This does not install the model into Ollama — use `./run` (or `ollama pull`) to run it.
 
 Examples:
 
 ```sh
 # Download a known model by name to ./models
-./get.sh -m llama3 -d ./models
-# or using the alias:
 ./get -m llama3 -d ./models
 
 # Or provide a direct tar URL (if available)
-./get.sh -u https://ollama.com/models/llama3.tar.gz -d ./models/llama3
+./get -u https://ollama.com/models/llama3.tar.gz -d ./models/llama3
 ```
 
 Notes:
 - The script creates the destination directory if it does not exist and extracts the archive there.
+- If you run without flags, it opens a dialog to select a model (and size) from the indexed list and chooses a default destination like `./models/<model>-<size>`.
 - To run a model with Ollama, prefer `./run` to select and pull a model (internally uses `ollama pull`), e.g.:
 
 ```sh
@@ -70,6 +77,7 @@ Notes:
 ```
 
 - Some tar URLs may not be publicly available for all models; in such cases use `./run` or `ollama pull <model>:<tag>`.
+- If a direct tar URL is unavailable (non-gzip response), the script falls back to `ollama pull <model>:<tag>` and, when supported, `ollama export` to save an `.ollama` file in your destination.
 - Optional: you can track a local path in `.env` via `model_path=./models/<name>` for your own workflows (not required by `./run`).
 
 ## get.sh help
@@ -77,18 +85,16 @@ Notes:
 View usage and options:
 
 ```sh
-./get.sh -h
-# or
 ./get -h
 ```
 
 Summary:
-- Usage: `./get.sh [-m <model>] [-u <url>] [-d <dir>]`
+- Usage: `./get [-m <model>] [-u <url>] [-d <dir>]`
 - Options:
   - `-m <model>`: model name (default: `llama3`)
   - `-u <url>`: direct tar URL (if available)
   - `-d <dir>`: destination directory (created if missing)
-Example: `./get.sh -m llama3 -d ./models`
+Example: `./get -m llama3 -d ./models`
 
 # Run prompts as CURL
 
