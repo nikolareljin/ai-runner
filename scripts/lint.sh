@@ -19,7 +19,20 @@ done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/include.sh"
-load_script_helpers logging help
+if load_script_helpers_if_available logging help; then
+    :
+else
+    display_help() {
+        cat <<'EOF'
+Run ShellCheck on tracked shell scripts.
+
+Usage: ./scripts/lint.sh [-h]
+
+Options:
+  -h    Show help
+EOF
+    }
+fi
 
 help() { display_help "$0"; }
 
