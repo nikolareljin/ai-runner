@@ -172,3 +172,6 @@ cython_debug/
 
 # ollama-get-models helper project.
 ollama-get-models
+
+# Node
+node_modules/

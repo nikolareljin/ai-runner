@@ -28,6 +28,17 @@ DEFAULT_MODEL="llama3"
 ENV_FILE="$ROOT_DIR/.env"
 MODEL_REPO_DIR="$ROOT_DIR/ollama-get-models"
 
+cleanup_screen() {
+    if [[ -t 1 ]]; then
+        if command -v dialog >/dev/null 2>&1; then
+            dialog --clear >/dev/null 2>&1 || true
+        else
+            clear >/dev/null 2>&1 || true
+        fi
+    fi
+}
+trap cleanup_screen EXIT
+
 is_wsl() {
     grep -qi "microsoft" /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]
 }
