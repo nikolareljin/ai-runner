@@ -5,6 +5,7 @@
 - Tooling: make `scripts/lint.sh` resilient when `scripts/script-helpers` is missing (CI-safe fallback logging).
 - CI: switch ShellCheck workflow to `nikolareljin/ci-helpers` reusable workflow.
 - Docs: update README/AGENTS to prefer symlinked commands and reflect new layout.
+- Docs: document `./example.sh` (Next.js demo bootstrap) in README and commands list.
 
 ## 2025-10-29
 - Docs: add AGENTS.md with repo-specific contributor guidelines.
