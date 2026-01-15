@@ -96,6 +96,8 @@ Usage:
 Notes:
 - Generates the demo in `./example/`.
 - Requires Node.js and npm.
+- Reads `.env` (creates from `.env.example` if needed) and writes `example/.env.local`.
+- Uses `model`, `size`, and `website` from `.env` to configure the Ollama base URL and model.
 - You may want to remove `example/node_modules` from git (see `.gitignore`).
 
 ## ./scripts/lint.sh
