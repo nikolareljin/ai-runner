@@ -31,27 +31,52 @@ install_runner_dependencies() {
     fi
 }
 
+resolve_python_cmd() {
+    if command -v python3 >/dev/null 2>&1; then
+        echo "python3"
+        return 0
+    fi
+    if command -v python >/dev/null 2>&1 && python - <<'PY'
+import sys
+raise SystemExit(0 if sys.version_info[0] == 3 else 1)
+PY
+    then
+        echo "python"
+        return 0
+    fi
+    return 1
+}
+
 ensure_python_deps() {
-    if ! command -v python3 >/dev/null 2>&1; then
+    local python_cmd
+    python_cmd="$(resolve_python_cmd)" || {
         print_error "python3 not found; install it and try again."
         return 1
-    fi
-    if ! python3 -m pip --version >/dev/null 2>&1; then
+    }
+    if ! "$python_cmd" -m pip --version >/dev/null 2>&1; then
         print_error "pip not available for python3. Run ./run -i or install python3-pip."
         return 1
     fi
-    python3 - <<'PY'
+    if "$python_cmd" - <<'PY'
 try:
     import bs4  # noqa: F401
     import requests  # noqa: F401
 except Exception:
     raise SystemExit(1)
 PY
-    if [[ $? -ne 0 ]]; then
-        print_info "Installing Python deps for model index (beautifulsoup4, requests)..."
-        python3 -m pip install --user --upgrade beautifulsoup4 requests
-    else
+    then
         print_info "Python deps for model index already installed."
+    else
+        if command -v apt-get >/dev/null 2>&1; then
+            print_info "Installing Python deps via apt (python3-bs4, python3-requests)..."
+            if ! run_with_optional_sudo true apt-get update; then
+                print_warning "apt-get update failed; attempting install with existing package lists."
+            fi
+            run_with_optional_sudo true apt-get install -y python3-bs4 python3-requests
+        else
+            print_info "Installing Python deps for model index (beautifulsoup4, requests)..."
+            "$python_cmd" -m pip install --user --upgrade beautifulsoup4 requests
+        fi
     fi
 }
 
