@@ -22,6 +22,13 @@ See [docs/INSTALL.md](docs/INSTALL.md) for the rest of the installation steps.
 
 Core scripts live in `scripts/`; use the root symlinks where possible.
 
+Install core dependencies before running:
+
+```sh
+./setup-deps
+```
+
+
 # Example app (Next.js)
 
 To scaffold the demo app from the Vercel AI example:
