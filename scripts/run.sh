@@ -87,16 +87,16 @@ while getopts ":him:p:" opt; do
     esac
 done
 
-if [[ "${SKIP_SETUP_DEPS:-0}" != "1" ]]; then
-    if [[ -x "$ROOT_DIR/setup-deps" ]]; then
+if $run_install; then
+    if [[ "${SKIP_SETUP_DEPS:-0}" == "1" ]]; then
+        print_warning "SKIP_SETUP_DEPS=1 set; skipping setup-deps."
+    elif [[ -x "$ROOT_DIR/setup-deps" ]]; then
         "$ROOT_DIR/setup-deps"
     elif [[ -x "$ROOT_DIR/scripts/setup-deps.sh" ]]; then
         "$ROOT_DIR/scripts/setup-deps.sh"
-    elif $run_install; then
+    else
         install_runner_dependencies
     fi
-elif $run_install; then
-    install_runner_dependencies
 fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
