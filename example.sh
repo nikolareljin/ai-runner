@@ -64,6 +64,8 @@ install_dependencies_ai_runner
 ensure_env_file
 npx create-next-app --example https://github.com/vercel/ai/tree/main/examples/next-ollama example
 cd example
+# Explicitly (re)install @vercel/ai to ensure the dependency is present and up to date,
+# even if the example template already includes it.
 npm install @vercel/ai
 
 write_example_env
