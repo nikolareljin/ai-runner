@@ -59,8 +59,8 @@ ensure_python_deps() {
     fi
     if "$python_cmd" - <<'PY'
 try:
-    import bs4  # noqa: F401
-    import requests  # noqa: F401
+    import bs4
+    import requests
 except Exception:
     raise SystemExit(1)
 PY
