@@ -28,6 +28,17 @@ DEFAULT_MODEL="llama3"
 ENV_FILE="$ROOT_DIR/.env"
 MODEL_REPO_DIR="$ROOT_DIR/ollama-get-models"
 
+cleanup_screen() {
+    if [[ -t 1 ]]; then
+        if command -v dialog >/dev/null 2>&1; then
+            dialog --clear >/dev/null 2>&1 || true
+        else
+            clear >/dev/null 2>&1 || true
+        fi
+    fi
+}
+trap cleanup_screen EXIT
+
 is_wsl() {
     grep -qi "microsoft" /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]
 }
@@ -77,7 +88,15 @@ while getopts ":him:p:" opt; do
 done
 
 if $run_install; then
-    install_runner_dependencies
+    if [[ "${SKIP_SETUP_DEPS:-0}" == "1" ]]; then
+        print_warning "SKIP_SETUP_DEPS=1 set; skipping setup-deps."
+    elif [[ -x "$ROOT_DIR/setup-deps" ]]; then
+        "$ROOT_DIR/setup-deps"
+    elif [[ -x "$ROOT_DIR/scripts/setup-deps.sh" ]]; then
+        "$ROOT_DIR/scripts/setup-deps.sh"
+    else
+        install_runner_dependencies
+    fi
 fi
 
 if [[ ! -f "$ENV_FILE" ]]; then

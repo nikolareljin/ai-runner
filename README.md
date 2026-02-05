@@ -22,6 +22,28 @@ See [docs/INSTALL.md](docs/INSTALL.md) for the rest of the installation steps.
 
 Core scripts live in `scripts/`; use the root symlinks where possible.
 
+Install core dependencies before running:
+
+```sh
+./setup-deps
+```
+
+
+# Example app (Next.js)
+
+To scaffold the demo app from the Vercel AI example:
+
+```sh
+./example.sh
+```
+
+Notes:
+- This creates/overwrites `./example/`.
+- Requires Node.js and npm.
+- `example/node_modules` should remain untracked (see `.gitignore`).
+- The script reads `.env` (creates from `.env.example` if needed) and writes `example/.env.local`.
+- Ollama settings are taken from `model`, `size`, and `website` in `.env`.
+
 # Run the model and install
 
 Run the command:

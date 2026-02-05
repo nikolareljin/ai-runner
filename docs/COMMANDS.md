@@ -1,7 +1,7 @@
 # Commands
 
 This project ships root-level command symlinks for the main scripts:
-`./run`, `./prompt`, `./get`, `./update`, and `./scripts/lint.sh`.
+`./run`, `./prompt`, `./get`, `./update`, `./example.sh`, and `./scripts/lint.sh`.
 
 ## ./run
 
@@ -82,6 +82,23 @@ Usage:
 ```sh
 ./update [-h]
 ```
+
+## ./example.sh
+
+Bootstrap the Next.js demo app from the Vercel AI example.
+
+Usage:
+
+```sh
+./example.sh [-h]
+```
+
+Notes:
+- Generates the demo in `./example/`.
+- Requires Node.js and npm.
+- Reads `.env` (creates from `.env.example` if needed) and writes `example/.env.local`.
+- Uses `model`, `size`, and `website` from `.env` to configure the Ollama base URL and model.
+- You may want to remove `example/node_modules` from git (see `.gitignore`).
 
 ## ./scripts/lint.sh
 

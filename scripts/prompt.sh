@@ -24,6 +24,17 @@ load_script_helpers logging dialog os env json file deps ollama help clipboard
 
 ENV_FILE="$ROOT_DIR/.env"
 
+cleanup_screen() {
+    if [[ -t 1 ]]; then
+        if command -v dialog >/dev/null 2>&1; then
+            dialog --clear >/dev/null 2>&1 || true
+        else
+            clear >/dev/null 2>&1 || true
+        fi
+    fi
+}
+trap cleanup_screen EXIT
+
 is_wsl() {
     grep -qi "microsoft" /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]
 }
