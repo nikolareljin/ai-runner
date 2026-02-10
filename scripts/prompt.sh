@@ -22,6 +22,18 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 source "$SCRIPT_DIR/include.sh"
 load_script_helpers logging dialog os env json file deps ollama help clipboard
 
+if ! declare -F ollama_model_ref >/dev/null 2>&1; then
+    ollama_model_ref() {
+        local model_name="$1"
+        local model_size="${2:-latest}"
+        if [[ -z "$model_size" || "$model_size" == "latest" ]]; then
+            echo "$model_name"
+        else
+            echo "${model_name}:${model_size}"
+        fi
+    }
+fi
+
 ENV_FILE="$ROOT_DIR/.env"
 
 cleanup_screen() {
