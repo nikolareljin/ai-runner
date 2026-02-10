@@ -70,6 +70,7 @@ if [[ -f "$ENV_FILE" ]]; then
 fi
 
 model="$(resolve_env_value "model" "llama3" "$ENV_FILE")"
+size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
 
 if [[ -z "$prompt" ]]; then
     dialog_init
@@ -92,15 +93,18 @@ if [[ -z "$prompt" ]]; then
     exit 1
 fi
 
+model_ref="$(ollama_model_ref "$model" "$size")"
 escaped_prompt=$(json_escape "$prompt")
-payload="{\"model\":\"${model}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
+payload="{\"model\":\"${model_ref}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
 if ! curl -sS -X POST http://localhost:11434/api/generate -d "$payload" > "$ROOT_DIR/response.json"; then
     print_error "Failed to reach Ollama API at http://localhost:11434/api/generate"
     exit 1
 fi
 
 response_json=$(cat "$ROOT_DIR/response.json")
-response=$(format_response "$response_json")
+if ! response=$(format_response "$response_json"); then
+    exit 1
+fi
 if [[ -z "$response" || "$response" == "null" ]]; then
     print_error "No response received."
     exit 1

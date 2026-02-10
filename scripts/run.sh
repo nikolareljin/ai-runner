@@ -146,7 +146,7 @@ if [[ -z "$prompt" ]]; then
 fi
 
 if command -v ollama >/dev/null 2>&1; then
-    ollama_pull_model "$selected_model" "$selected_size"
+    ollama_pull_model "$selected_model" "$selected_size" "$json_file"
     ollama_run_model "$selected_model" "$selected_size"
 else
     if is_wsl; then
@@ -156,15 +156,18 @@ else
     fi
 fi
 
+model_ref="$(ollama_model_ref "$selected_model" "$selected_size")"
 escaped_prompt=$(json_escape "$prompt")
-payload="{\"model\":\"${selected_model}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
+payload="{\"model\":\"${model_ref}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
 if ! curl -sS -X POST http://localhost:11434/api/generate -d "$payload" > "$ROOT_DIR/response.json"; then
     print_error "Failed to reach Ollama API at http://localhost:11434/api/generate"
     exit 1
 fi
 
 response_json=$(cat "$ROOT_DIR/response.json")
-response=$(format_response "$response_json")
+if ! response=$(format_response "$response_json"); then
+    exit 1
+fi
 if [[ -z "$response" || "$response" == "null" ]]; then
     print_error "No response received."
     exit 1
@@ -180,7 +183,7 @@ dialog --title "Response" --msgbox "$response" "$DIALOG_HEIGHT" "$DIALOG_WIDTH"
 formatted_md_response=$(format_md_response "$response")
 {
     echo "## Response"
-    echo "### Model: ${selected_model}"
+    echo "### Model: ${model_ref}"
     echo "### Size: ${selected_size}"
     echo "### Prompt: ${prompt}"
     echo "### Response:"

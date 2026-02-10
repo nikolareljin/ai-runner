@@ -26,6 +26,7 @@ load_script_helpers logging dialog os env json file deps ollama help clipboard
 
 ENV_FILE="$ROOT_DIR/.env"
 MODEL_REPO_DIR="$ROOT_DIR/ollama-get-models"
+json_file=""
 
 help() { display_help "$0"; }
 
@@ -106,11 +107,15 @@ rm -f "$tmpfile"
 
 if command -v ollama >/dev/null 2>&1 && [[ -n "$model" ]]; then
     tag="${size:-latest}"
-    print_info "Attempting fallback via 'ollama pull' for ${model}:${tag}..."
-    if ollama_pull_model "$model" "$tag"; then
+    model_ref="$(ollama_model_ref "$model" "$tag")"
+    if [[ -z "$json_file" ]]; then
+        json_file="$(ollama_models_json_path "$MODEL_REPO_DIR")"
+    fi
+    print_info "Attempting fallback via 'ollama pull' for ${model_ref}..."
+    if ollama_pull_model "$model" "$tag" "$json_file"; then
         if ollama help 2>&1 | grep -iq "export"; then
             outbase="${dir}/${model}-${tag}"
-            if ollama export "${model}:${tag}" > "${outbase}.ollama"; then
+            if ollama export "${model_ref}" > "${outbase}.ollama"; then
                 print_success "Exported model to ${outbase}.ollama"
                 exit 0
             else
@@ -122,7 +127,7 @@ if command -v ollama >/dev/null 2>&1 && [[ -n "$model" ]]; then
             exit 0
         fi
     else
-        print_error "Ollama pull failed for ${model}:${tag}."
+        print_error "Ollama pull failed for ${model_ref}."
         exit 1
     fi
 else
