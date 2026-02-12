@@ -22,20 +22,6 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/include.sh"
 load_script_helpers logging dialog os env json file deps ollama help clipboard
-# shellcheck source=/dev/null
-source "$SCRIPT_DIR/ollama-runtime.sh"
-
-if ! declare -F ollama_model_ref >/dev/null 2>&1; then
-    ollama_model_ref() {
-        local model_name="$1"
-        local model_size="${2:-latest}"
-        if [[ -z "$model_size" || "$model_size" == "latest" ]]; then
-            echo "$model_name"
-        else
-            echo "${model_name}:${model_size}"
-        fi
-    }
-fi
 
 ENV_FILE="$ROOT_DIR/.env"
 
@@ -49,10 +35,6 @@ cleanup_screen() {
     fi
 }
 trap cleanup_screen EXIT
-
-is_wsl() {
-    grep -qi "microsoft" /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]
-}
 
 help() { display_help "$0"; }
 

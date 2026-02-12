@@ -18,10 +18,6 @@ SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 source "$SCRIPT_DIR/include.sh"
 load_script_helpers logging os deps
 
-is_wsl() {
-    grep -qi "microsoft" /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]
-}
-
 install_runner_dependencies() {
     if is_wsl; then
         print_info "WSL2 detected: installing common dependencies; Ollama CLI is expected on Windows host."
