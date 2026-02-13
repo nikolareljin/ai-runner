@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # SCRIPT: run.sh
 # DESCRIPTION: Select an Ollama model/size, run it, and prompt the local API.
-# USAGE: ./run.sh [-h] [-i] [-m <model>] [-p <prompt>]
+# USAGE: ./run.sh [-h] [-i] [-m <model>] [-p <prompt>] [-r <runtime>]
 # PARAMETERS:
 # -i                : install dependencies and Ollama CLI
 # -m <model>        : preselect model for the dialog
 # -p <prompt>       : prompt to send (skips prompt dialog)
+# -r <runtime>      : runtime to use (local|docker)
 # -h                : show help
-# EXAMPLE: ./run.sh -i -m llama3 -p "Hello, how are you?"
+# EXAMPLE: ./run.sh -i -m llama3 -p "Hello, how are you?" -r docker
 # ----------------------------------------------------
 set -euo pipefail
 
@@ -38,10 +39,6 @@ cleanup_screen() {
     fi
 }
 trap cleanup_screen EXIT
-
-is_wsl() {
-    grep -qi "microsoft" /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]
-}
 
 help() { display_help "$0"; }
 
@@ -75,13 +72,15 @@ copy_to_clipboard_safe() {
 run_install=false
 model=""
 prompt=""
+runtime_override=""
 
-while getopts ":him:p:" opt; do
+while getopts ":him:p:r:" opt; do
     case ${opt} in
         h) help; exit 0 ;;
         i) run_install=true ;;
         m) model="$OPTARG" ;;
         p) prompt="$OPTARG" ;;
+        r) runtime_override="$OPTARG" ;;
         :) print_error "Option -$OPTARG requires an argument"; exit 1 ;;
         \?) print_error "Invalid option: -$OPTARG"; help; exit 1 ;;
     esac
@@ -105,6 +104,9 @@ if [[ ! -f "$ENV_FILE" ]]; then
 fi
 
 load_env "$ENV_FILE"
+ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
+runtime="$(ollama_runtime_type "$ENV_FILE" "$runtime_override")"
+generate_endpoint="$(ollama_runtime_generate_endpoint "$ENV_FILE")"
 
 json_file="$(ollama_models_json_path "$MODEL_REPO_DIR")"
 if [[ ! -f "$json_file" ]]; then
@@ -123,6 +125,7 @@ selected_size="$(ollama_dialog_select_size "$json_file" "$selected_model" "$curr
 
 ollama_update_env "$ENV_FILE" model "$selected_model"
 ollama_update_env "$ENV_FILE" size "$selected_size"
+ollama_update_env "$ENV_FILE" ollama_runtime "$runtime"
 
 if [[ -z "$prompt" ]]; then
     dialog_init
@@ -145,26 +148,35 @@ if [[ -z "$prompt" ]]; then
     exit 1
 fi
 
-if command -v ollama >/dev/null 2>&1; then
-    ollama_pull_model "$selected_model" "$selected_size"
-    ollama_run_model "$selected_model" "$selected_size"
+if [[ "$runtime" == "docker" ]]; then
+    ollama_runtime_ensure_ready "$runtime" "$ENV_FILE"
+    ollama_runtime_pull_model "$runtime" "$ENV_FILE" "$selected_model" "$selected_size"
+    print_info "Using Docker Ollama at $(ollama_runtime_api_base_url "$ENV_FILE")."
 else
-    if is_wsl; then
-        print_warning "Ollama CLI not found in WSL. Ensure the Windows Ollama app is running with the model available."
+    if command -v ollama >/dev/null 2>&1; then
+        ollama_runtime_pull_model "$runtime" "$ENV_FILE" "$selected_model" "$selected_size"
+        ollama_runtime_run_model "$runtime" "$ENV_FILE" "$selected_model" "$selected_size"
     else
-        print_warning "Ollama CLI not found. Skipping pull/run."
+        if is_wsl; then
+            print_warning "Ollama CLI not found in WSL. Ensure the Windows Ollama app is running with the model available."
+        else
+            print_warning "Ollama CLI not found. Skipping pull/run."
+        fi
     fi
 fi
 
+model_ref="$(ollama_model_ref "$selected_model" "$selected_size")"
 escaped_prompt=$(json_escape "$prompt")
-payload="{\"model\":\"${selected_model}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
-if ! curl -sS -X POST http://localhost:11434/api/generate -d "$payload" > "$ROOT_DIR/response.json"; then
-    print_error "Failed to reach Ollama API at http://localhost:11434/api/generate"
+payload="{\"model\":\"${model_ref}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
+if ! curl -sS -X POST "$generate_endpoint" -d "$payload" > "$ROOT_DIR/response.json"; then
+    print_error "Failed to reach Ollama API at $generate_endpoint"
     exit 1
 fi
 
 response_json=$(cat "$ROOT_DIR/response.json")
-response=$(format_response "$response_json")
+if ! response=$(format_response "$response_json"); then
+    exit 1
+fi
 if [[ -z "$response" || "$response" == "null" ]]; then
     print_error "No response received."
     exit 1
@@ -180,13 +192,11 @@ dialog --title "Response" --msgbox "$response" "$DIALOG_HEIGHT" "$DIALOG_WIDTH"
 formatted_md_response=$(format_md_response "$response")
 {
     echo "## Response"
-    echo "### Model: ${selected_model}"
+    echo "### Model: ${model_ref}"
     echo "### Size: ${selected_size}"
     echo "### Prompt: ${prompt}"
     echo "### Response:"
     echo "$formatted_md_response"
 } > /tmp/response.md
 
-if command -v ollama >/dev/null 2>&1; then
-    ollama ps
-fi
+ollama_runtime_ps "$runtime" "$ENV_FILE"

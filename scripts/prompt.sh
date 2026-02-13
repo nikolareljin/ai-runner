@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # SCRIPT: prompt.sh
 # DESCRIPTION: Prompt the configured Ollama model via the local API.
-# USAGE: ./prompt.sh [-h] [-p "<prompt>"]
+# USAGE: ./prompt.sh [-h] [-p "<prompt>"] [-r <runtime>]
 # PARAMETERS:
 # -p "<prompt>"     : prompt to send (skips dialog)
+# -r <runtime>      : runtime to use (local|docker)
 # -h                : show help
-# EXAMPLE: ./prompt.sh -p "What is the meaning of life?"
+# EXAMPLE: ./prompt.sh -p "What is the meaning of life?" -r docker
 # ----------------------------------------------------
 set -euo pipefail
 
@@ -35,10 +36,6 @@ cleanup_screen() {
 }
 trap cleanup_screen EXIT
 
-is_wsl() {
-    grep -qi "microsoft" /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]
-}
-
 help() { display_help "$0"; }
 
 copy_to_clipboard_safe() {
@@ -55,11 +52,13 @@ copy_to_clipboard_safe() {
 }
 
 prompt=""
+runtime_override=""
 
-while getopts ":hp:" opt; do
+while getopts ":hp:r:" opt; do
     case ${opt} in
         h) help; exit 0 ;;
         p) prompt="$OPTARG" ;;
+        r) runtime_override="$OPTARG" ;;
         :) print_error "Option -$OPTARG requires an argument"; exit 1 ;;
         \?) print_error "Invalid option: -$OPTARG"; help; exit 1 ;;
     esac
@@ -67,9 +66,13 @@ done
 
 if [[ -f "$ENV_FILE" ]]; then
     load_env "$ENV_FILE"
+    ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
 fi
 
 model="$(resolve_env_value "model" "llama3" "$ENV_FILE")"
+size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
+runtime="$(ollama_runtime_type "$ENV_FILE" "$runtime_override")"
+generate_endpoint="$(ollama_runtime_generate_endpoint "$ENV_FILE")"
 
 if [[ -z "$prompt" ]]; then
     dialog_init
@@ -92,15 +95,22 @@ if [[ -z "$prompt" ]]; then
     exit 1
 fi
 
+model_ref="$(ollama_model_ref "$model" "$size")"
 escaped_prompt=$(json_escape "$prompt")
-payload="{\"model\":\"${model}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
-if ! curl -sS -X POST http://localhost:11434/api/generate -d "$payload" > "$ROOT_DIR/response.json"; then
-    print_error "Failed to reach Ollama API at http://localhost:11434/api/generate"
+payload="{\"model\":\"${model_ref}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
+if [[ "$runtime" == "docker" ]]; then
+    ollama_runtime_ensure_ready "$runtime" "$ENV_FILE"
+fi
+
+if ! curl -sS -X POST "$generate_endpoint" -d "$payload" > "$ROOT_DIR/response.json"; then
+    print_error "Failed to reach Ollama API at $generate_endpoint"
     exit 1
 fi
 
 response_json=$(cat "$ROOT_DIR/response.json")
-response=$(format_response "$response_json")
+if ! response=$(format_response "$response_json"); then
+    exit 1
+fi
 if [[ -z "$response" || "$response" == "null" ]]; then
     print_error "No response received."
     exit 1

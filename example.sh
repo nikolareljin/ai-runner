@@ -30,17 +30,22 @@ ensure_env_file() {
 }
 
 write_example_env() {
-    local model size website base_url model_full
+    local model size website ollama_url base_url model_full
     load_env "$ENV_FILE"
     model="$(resolve_env_value "model" "llama3" "$ENV_FILE")"
     size="$(resolve_env_value "size" "" "$ENV_FILE")"
+    ollama_url="$(resolve_env_value "ollama_url" "" "$ENV_FILE")"
     website="$(resolve_env_value "website" "http://localhost:11434/api/generate" "$ENV_FILE")"
-    base_url="${website%/api/generate}"
-    if [[ "$base_url" == "$website" ]]; then
-        base_url="${website%/api/*}"
-    fi
-    if [[ -z "$base_url" ]]; then
-        base_url="$website"
+    if [[ -n "$ollama_url" ]]; then
+        base_url="${ollama_url%/}"
+    else
+        base_url="${website%/api/generate}"
+        if [[ "$base_url" == "$website" ]]; then
+            base_url="${website%/api/*}"
+        fi
+        if [[ -z "$base_url" ]]; then
+            base_url="$website"
+        fi
     fi
     model_full="$model"
     if [[ -n "$size" && "$model" != *:* ]]; then
@@ -69,5 +74,5 @@ cd example
 npm install @vercel/ai
 
 write_example_env
-print_info "Configured example/.env.local from .env (model/size/website)."
+print_info "Configured example/.env.local from .env (model/size/ollama_url)."
 print_info "Next: add your API route under app/api/chat/route.ts if you want to customize it further."
