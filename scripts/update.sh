@@ -8,6 +8,8 @@
 # ----------------------------------------------------
 set -euo pipefail
 
+SUBMODULE_PATH="scripts/script-helpers"
+
 SCRIPT_SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SCRIPT_SOURCE" ]; do
     SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
@@ -31,5 +33,8 @@ while getopts ":h" opt; do
 done
 
 print_info "Updating git submodules..."
+git submodule sync --recursive
 git submodule update --init --recursive
+git submodule set-branch --branch production "$SUBMODULE_PATH"
+git submodule update --init --recursive --remote "$SUBMODULE_PATH"
 print_success "Submodules updated."
