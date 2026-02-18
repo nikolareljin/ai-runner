@@ -175,3 +175,8 @@ ollama-get-models
 
 # Node
 node_modules/
+
+scripts/script-helpers/
+
+
+/ignore/
