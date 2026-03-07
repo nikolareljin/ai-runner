@@ -7,7 +7,11 @@ on:
 
 jobs:
   shellcheck:
+<<<<<<< HEAD
     uses: nikolareljin/ci-helpers/.github/workflows/ci.yml@production
+=======
+    uses: nikolareljin/ci-helpers/.github/workflows/ci.yml@0.6.1
+>>>>>>> 4871e77bafb356c50e1add3cd5c355b79bd85343
     with:
       lint_command: |
         sudo apt clean
