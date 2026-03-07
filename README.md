@@ -17,16 +17,16 @@ Models available at: https://ollama.com/search
 Set in `.env`:
 
 ```sh
-ollama_scheme=http
-ollama_host=localhost
-ollama_port=11434
-ollama_runtime=local
-ollama_url=http://localhost:11434
-ollama_docker_container=ai-runner-ollama
-ollama_docker_image=ollama/ollama:latest
-ollama_data_dir=./models/ollama-data
-ollama_shared_model_store=1
-ollama_local_models_dir=./models/ollama-data/models
+ollama_scheme="http"
+ollama_host="localhost"
+ollama_port="11434"
+ollama_runtime="local"
+ollama_url="${ollama_scheme}://${ollama_host}:${ollama_port}"
+ollama_docker_container="ai-runner-ollama"
+ollama_docker_image="ollama/ollama:latest"
+ollama_data_dir="./models/ollama-data"
+ollama_shared_model_store="1"
+ollama_local_models_dir="./models/ollama-data/models"
 ```
 
 You can override per command with `-r local` or `-r docker`.
