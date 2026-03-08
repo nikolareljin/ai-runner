@@ -22,7 +22,7 @@ source "$SCRIPT_DIR/include.sh"
 if [[ -e "$HELPERS_PATH" ]] && load_script_helpers_if_available logging help; then
     :
 else
-    print_info "script-helpers not initialized; using local lint help fallback."
+    printf '%s\n' "script-helpers not initialized; using local lint help fallback."
     display_help() {
         cat <<'EOF'
 Run ShellCheck on tracked shell scripts.

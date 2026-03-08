@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # SCRIPT: update.sh
 # DESCRIPTION: Initialize and update git submodules.
-# USAGE: ./scripts/update.sh [-h]
+# USAGE: ./scripts/update.sh [-h] [-r]
 # PARAMETERS:
 # -h                : show help
+# -r                : update submodule to latest remote commit on configured branch
 # EXAMPLE: ./scripts/update.sh
 # ----------------------------------------------------
 set -euo pipefail
@@ -25,15 +26,21 @@ load_script_helpers_if_available logging help || true
 
 help() { display_help "$0"; }
 
-while getopts ":h" opt; do
+update_remote=false
+while getopts ":hr" opt; do
     case ${opt} in
         h) help; exit 0 ;;
+        r) update_remote=true ;;
         \?) print_error "Invalid option: -$OPTARG"; help; exit 1 ;;
     esac
 done
 
 print_info "Updating git submodules..."
 git submodule sync --recursive -- "$SUBMODULE_PATH"
-git submodule set-branch --branch production "$SUBMODULE_PATH"
-git submodule update --init --recursive --remote "$SUBMODULE_PATH"
+if $update_remote; then
+    git submodule set-branch --branch production "$SUBMODULE_PATH"
+    git submodule update --init --recursive --remote "$SUBMODULE_PATH"
+else
+    git submodule update --init --recursive -- "$SUBMODULE_PATH"
+fi
 print_success "Submodules updated."
