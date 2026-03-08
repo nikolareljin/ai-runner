@@ -96,15 +96,11 @@ if [[ -n "$model" && "$model" == *:* && -z "$size" ]]; then
     model="${model%%:*}"
 fi
 
-if [[ -t 0 && -t 1 ]]; then
+if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
     json_file="$(ollama_models_json_path "$MODEL_REPO_DIR")"
     if [[ ! -f "$json_file" ]]; then
         print_info "Model index not found. Preparing..."
         json_file="$(ollama_prepare_models_index "$MODEL_REPO_DIR")"
-    fi
-
-    if [[ -n "$url" ]]; then
-        print_warning "Ignoring -u in interactive mode; selecting model from TUI."
     fi
 
     current_model="${model:-$(resolve_env_value "model" "" "$ENV_FILE")}"
