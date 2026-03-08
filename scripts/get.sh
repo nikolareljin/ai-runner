@@ -200,10 +200,12 @@ fi
 
 if [[ -z "$dir" ]]; then
     base="$ROOT_DIR/models"
+    safe_model_dir="$(sanitize_filename_component "${model:-archive}")"
     if [[ -n "$size" ]]; then
-        dir="${base}/${model}-${size}"
+        safe_size_dir="$(sanitize_filename_component "$size")"
+        dir="${base}/${safe_model_dir}-${safe_size_dir}"
     else
-        dir="${base}/${model}"
+        dir="${base}/${safe_model_dir}"
     fi
 fi
 
