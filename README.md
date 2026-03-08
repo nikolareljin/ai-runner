@@ -65,7 +65,7 @@ Notes:
 - This creates/overwrites `./example/`.
 - Requires Node.js and npm.
 - `example/node_modules` should remain untracked (see `.gitignore`).
-- The script reads `.env` (creates from `.env.example` if needed) and writes `example/.env.local`.
+- The script reads `.env` (creates from `.env.example.txt` if needed) and writes `example/.env.local`.
 - Ollama settings are taken from `model`, `size`, `ollama_host`, `ollama_port`, and `ollama_url` in `.env`.
 
 # Run the model and install

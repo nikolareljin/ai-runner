@@ -101,7 +101,7 @@ Usage:
 Notes:
 - Generates the demo in `./example/`.
 - Requires Node.js and npm.
-- Reads `.env` (creates from `.env.example` if needed) and writes `example/.env.local`.
+- Reads `.env` (creates from `.env.example.txt` if needed) and writes `example/.env.local`.
 - Uses `model`, `size`, `ollama_host`, `ollama_port`, and `ollama_url` from `.env` to configure the Ollama base URL and model.
 - `ollama_url` is generated from `ollama_scheme` + `ollama_host` + `ollama_port`; legacy `website` is only a fallback.
 - You may want to remove `example/node_modules` from git (see `.gitignore`).
