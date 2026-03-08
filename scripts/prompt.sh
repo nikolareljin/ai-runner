@@ -75,8 +75,10 @@ runtime="$(ollama_runtime_type "$ENV_FILE" "$runtime_override")"
 if [[ -f "$ENV_FILE" ]]; then
     ollama_update_env "$ENV_FILE" ollama_runtime "$runtime"
     ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
+    generate_endpoint="$(ollama_runtime_generate_endpoint "$ENV_FILE")"
+else
+    generate_endpoint="http://localhost:11434/api/generate"
 fi
-generate_endpoint="$(ollama_runtime_generate_endpoint "$ENV_FILE")"
 
 if [[ -z "$prompt" ]]; then
     dialog_init

@@ -42,6 +42,20 @@ sanitize_filename_component() {
     printf "%s\n" "$value"
 }
 
+validate_tar_archive_safety() {
+    local archive_path="$1"
+    local entry
+
+    while IFS= read -r entry; do
+        [[ -n "$entry" ]] || continue
+        entry="${entry#./}"
+        if [[ "$entry" == /* ]] || [[ "$entry" =~ (^|/)\.\.(/|$) ]]; then
+            print_error "Unsafe archive entry detected: $entry"
+            return 1
+        fi
+    done < <(tar -tzf "$archive_path")
+}
+
 get_select_model_any() {
     local json_file="$1"
     local current_model="${2:-}"
@@ -152,7 +166,7 @@ tmpfile=$(mktemp)
 download_extracted=false
 if DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
     if gzip -t "$tmpfile" >/dev/null 2>&1; then
-        if tar -xzf "$tmpfile" -C "$dir"; then
+        if validate_tar_archive_safety "$tmpfile" && tar -xzf "$tmpfile" -C "$dir"; then
             print_success "Model ${model:-archive} extracted to $dir."
             download_extracted=true
         else

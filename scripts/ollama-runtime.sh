@@ -15,3 +15,11 @@ if ! declare -F ollama_runtime_type >/dev/null 2>&1; then
         exit 1
     fi
 fi
+
+if ! declare -F ollama_runtime_type >/dev/null 2>&1; then
+    echo "ERROR: failed to load Ollama runtime helpers (ollama_runtime_type is undefined)." >&2
+    if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+        return 1
+    fi
+    exit 1
+fi
