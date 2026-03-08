@@ -86,6 +86,8 @@ while getopts ":him:p:r:" opt; do
     esac
 done
 
+runtime_override="$(printf '%s' "$runtime_override" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')"
+
 if $run_install; then
     if [[ "${SKIP_SETUP_DEPS:-0}" == "1" ]]; then
         print_warning "SKIP_SETUP_DEPS=1 set; skipping setup-deps."

@@ -134,6 +134,8 @@ while getopts ":hm:u:d:r:" opt; do
     esac
 done
 
+runtime_override="$(printf '%s' "$runtime_override" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')"
+
 if [[ -f "$ENV_FILE" ]]; then
     load_env "$ENV_FILE"
     ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
