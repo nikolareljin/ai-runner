@@ -45,15 +45,21 @@ sanitize_filename_component() {
 validate_tar_archive_safety() {
     local archive_path="$1"
     local entry
+    local -a entries=()
 
-    while IFS= read -r entry; do
+    if ! mapfile -t entries < <(tar -tzf "$archive_path"); then
+        print_error "Failed to inspect archive: $archive_path"
+        return 1
+    fi
+
+    for entry in "${entries[@]}"; do
         [[ -n "$entry" ]] || continue
         entry="${entry#./}"
         if [[ "$entry" == /* ]] || [[ "$entry" =~ (^|/)\.\.(/|$) ]]; then
             print_error "Unsafe archive entry detected: $entry"
             return 1
         fi
-    done < <(tar -tzf "$archive_path")
+    done
 }
 
 get_select_model_any() {
@@ -166,7 +172,7 @@ tmpfile=$(mktemp)
 download_extracted=false
 if DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
     if gzip -t "$tmpfile" >/dev/null 2>&1; then
-        if validate_tar_archive_safety "$tmpfile" && tar -xzf "$tmpfile" -C "$dir"; then
+        if validate_tar_archive_safety "$tmpfile" && tar --no-same-owner --no-same-permissions -xzf "$tmpfile" -C "$dir"; then
             print_success "Model ${model:-archive} extracted to $dir."
             download_extracted=true
         else
