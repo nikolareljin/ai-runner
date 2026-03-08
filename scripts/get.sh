@@ -171,7 +171,8 @@ if [[ -n "$model" ]]; then
     print_info "Attempting fallback via '$runtime' runtime pull for ${model_ref}..."
     if ollama_runtime_pull_model "$runtime" "$ENV_FILE" "$model" "$tag"; then
         if ollama_runtime_supports_export "$runtime" "$ENV_FILE"; then
-            outbase="${dir}/${model}-${tag}"
+            safe_model="${model//\//_}"
+            outbase="${dir}/${safe_model}-${tag}"
             if ollama_runtime_export_model "$runtime" "$ENV_FILE" "$model_ref" "${outbase}.ollama"; then
                 print_success "Exported model to ${outbase}.ollama"
                 exit 0
