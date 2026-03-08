@@ -45,7 +45,10 @@ sanitize_filename_component() {
 validate_tar_archive_safety() {
     local archive_path="$1"
     local entry
+    local perms
+    local type_char
     local -a entries=()
+    local -a verbose_entries=()
 
     if ! mapfile -t entries < <(tar -tzf "$archive_path"); then
         print_error "Failed to inspect archive: $archive_path"
@@ -57,6 +60,22 @@ validate_tar_archive_safety() {
         entry="${entry#./}"
         if [[ "$entry" == /* ]] || [[ "$entry" =~ (^|/)\.\.(/|$) ]]; then
             print_error "Unsafe archive entry detected: $entry"
+            return 1
+        fi
+    done
+
+    if ! mapfile -t verbose_entries < <(tar -tvzf "$archive_path"); then
+        print_error "Failed to perform verbose inspection of archive: $archive_path"
+        return 1
+    fi
+
+    for entry in "${verbose_entries[@]}"; do
+        [[ -n "$entry" ]] || continue
+        perms="${entry%% *}"
+        [[ -n "$perms" ]] || continue
+        type_char="${perms:0:1}"
+        if [[ "$type_char" == "l" || "$type_char" == "h" ]]; then
+            print_error "Unsafe link entry detected in archive: $entry"
             return 1
         fi
     done
@@ -81,7 +100,7 @@ get_select_model_any() {
     if [[ "$mode" == "indexed" ]]; then
         model_value="$(ollama_dialog_select_model "$json_file" "$current_model")" || return 1
         size_value="$(ollama_dialog_select_size "$json_file" "$model_value" "$current_size")" || return 1
-        printf "%s|%s\n" "$model_value" "$size_value"
+        printf '%s\n%s\n' "$model_value" "$size_value"
         return 0
     fi
 
@@ -95,7 +114,7 @@ get_select_model_any() {
     size_value="$(get_value "Model Size/Tag" "Enter size/tag (example: 3b). Use latest for default." "$current_size")" || return 1
     size_value="$(printf '%s' "${size_value:-latest}" | xargs)"
     [[ -z "$size_value" ]] && size_value="latest"
-    printf "%s|%s\n" "$model_value" "$size_value"
+    printf '%s\n%s\n' "$model_value" "$size_value"
 }
 
 model=""
@@ -137,9 +156,13 @@ if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
     current_model="${model:-$(resolve_env_value "model" "" "$ENV_FILE")}"
     current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
     [[ -n "$size" ]] && current_size="$size"
-    selection="$(get_select_model_any "$json_file" "$current_model" "$current_size")" || exit 1
-    model="${selection%%|*}"
-    size="${selection#*|}"
+    mapfile -t selection_lines < <(get_select_model_any "$json_file" "$current_model" "$current_size") || exit 1
+    if [[ "${#selection_lines[@]}" -lt 2 ]]; then
+        print_error "Model selection failed."
+        exit 1
+    fi
+    model="${selection_lines[0]}"
+    size="${selection_lines[1]}"
     url=""
 elif [[ -z "$model" && -z "$url" ]]; then
     print_error "Non-interactive mode requires -m <model> or -u <url>."
