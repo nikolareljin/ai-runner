@@ -220,12 +220,24 @@ if [[ -z "$url" ]]; then
 elif DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
     if gzip -t "$tmpfile" >/dev/null 2>&1; then
         if validate_tar_archive_safety "$tmpfile"; then
-            if tar --no-same-owner --no-same-permissions -xzf "$tmpfile" -C "$dir"; then
-                print_success "Model ${model:-archive} extracted to $dir."
-                download_extracted=true
+            extract_stage_dir="$(mktemp -d)"
+            if tar --no-same-owner --no-same-permissions -xzf "$tmpfile" -C "$extract_stage_dir"; then
+                if cp -R "$extract_stage_dir"/. "$dir"/; then
+                    print_success "Model ${model:-archive} extracted to $dir."
+                    download_extracted=true
+                else
+                    print_error "Failed to apply extracted archive content into $dir."
+                    rm -rf "$extract_stage_dir"
+                    rm -f "$tmpfile"
+                    exit 1
+                fi
             else
                 print_error "Archive extraction failed."
+                rm -rf "$extract_stage_dir"
+                rm -f "$tmpfile"
+                exit 1
             fi
+            rm -rf "$extract_stage_dir"
         else
             print_error "Archive extraction skipped due to failed safety validation."
         fi
