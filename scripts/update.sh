@@ -33,8 +33,7 @@ while getopts ":h" opt; do
 done
 
 print_info "Updating git submodules..."
-git submodule sync --recursive
-git submodule update --init --recursive
+git submodule sync --recursive -- "$SUBMODULE_PATH"
 git submodule set-branch --branch production "$SUBMODULE_PATH"
 git submodule update --init --recursive --remote "$SUBMODULE_PATH"
 print_success "Submodules updated."

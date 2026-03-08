@@ -165,6 +165,9 @@ if [[ -n "$model" ]]; then
     if [[ -z "$json_file" ]]; then
         json_file="$(ollama_models_json_path "$MODEL_REPO_DIR")"
     fi
+    if [[ "$runtime" == "docker" ]]; then
+        ollama_runtime_ensure_ready "$runtime" "$ENV_FILE"
+    fi
     print_info "Attempting fallback via '$runtime' runtime pull for ${model_ref}..."
     if ollama_runtime_pull_model "$runtime" "$ENV_FILE" "$model" "$tag"; then
         if ollama_runtime_supports_export "$runtime" "$ENV_FILE"; then
