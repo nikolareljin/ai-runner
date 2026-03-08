@@ -159,7 +159,7 @@ else
         ollama_runtime_pull_model "$runtime" "$ENV_FILE" "$selected_model" "$selected_size"
         ollama_runtime_run_model "$runtime" "$ENV_FILE" "$selected_model" "$selected_size"
     else
-        if is_wsl; then
+        if declare -F is_wsl >/dev/null 2>&1 && is_wsl; then
             print_warning "Ollama CLI not found in WSL. Ensure the Windows Ollama app is running with the model available."
         else
             print_warning "Ollama CLI not found. Skipping pull/run."

@@ -45,8 +45,24 @@ sanitize_filename_component() {
 validate_tar_archive_safety() {
     local archive_path="$1"
     if ! command -v python3 >/dev/null 2>&1; then
-        print_error "python3 is required to validate archive safety."
-        return 1
+        print_warning "python3 not found; using basic tar archive safety checks."
+        if ! command -v tar >/dev/null 2>&1; then
+            print_error "tar is required to validate archive safety."
+            return 1
+        fi
+
+        local entry name
+        while IFS= read -r entry; do
+            name="$entry"
+            while [[ "$name" == ./* ]]; do
+                name="${name#./}"
+            done
+            if [[ -z "$name" || "$name" == /* || "$name" == ".." || "$name" == ../* || "$name" == */.. || "$name" == */../* ]]; then
+                print_error "Unsafe archive entry detected: $entry"
+                return 1
+            fi
+        done < <(tar -tzf "$archive_path")
+        return 0
     fi
 
     if ! python3 - "$archive_path" <<'PY'
@@ -202,22 +218,12 @@ if [[ -z "$url" ]]; then
 elif DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
     if gzip -t "$tmpfile" >/dev/null 2>&1; then
         if validate_tar_archive_safety "$tmpfile"; then
-            extract_dir="$(mktemp -d)"
-            if tar --no-same-owner --no-same-permissions -xzf "$tmpfile" -C "$extract_dir"; then
-                # Copy extracted files without preserving source ownership/permissions.
-                if cp -R "$extract_dir"/. "$dir"/; then
-                    print_success "Model ${model:-archive} extracted to $dir."
-                    download_extracted=true
-                else
-                    print_error "Failed to move extracted archive content into $dir."
-                    rm -rf "$extract_dir"
-                    rm -f "$tmpfile"
-                    exit 1
-                fi
+            if tar --no-same-owner --no-same-permissions -xzf "$tmpfile" -C "$dir"; then
+                print_success "Model ${model:-archive} extracted to $dir."
+                download_extracted=true
             else
                 print_error "Archive extraction failed."
             fi
-            rm -rf "$extract_dir"
         else
             print_error "Archive extraction skipped due to failed safety validation."
         fi
