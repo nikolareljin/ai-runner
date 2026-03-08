@@ -162,7 +162,7 @@ You can run prompts against the running model via curl commands:
 Example:
 
 ```
-curl -X POST "${OLLAMA_URL:-http://localhost:11434}/api/generate" -d "{\"model\": \"llama3\",  \"prompt\":\"Tell me about the meaning of life.\", \"stream\": false}"
+curl -X POST "${ollama_url:-http://localhost:11434}/api/generate" -d "{\"model\": \"llama3\",  \"prompt\":\"Tell me about the meaning of life.\", \"stream\": false}"
 ``` 
 
 # Endpoints

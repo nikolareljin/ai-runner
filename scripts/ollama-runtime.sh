@@ -9,6 +9,6 @@ if ! declare -F ollama_runtime_type >/dev/null 2>&1; then
         shlib_import ollama >/dev/null
     else
         echo "ERROR: ollama runtime helpers not loaded. Source scripts/include.sh first." >&2
-        return 1
+        return 1 2>/dev/null || exit 1
     fi
 fi

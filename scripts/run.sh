@@ -199,4 +199,5 @@ formatted_md_response=$(format_md_response "$response")
     echo "$formatted_md_response"
 } > /tmp/response.md
 
-ollama_runtime_ps "$runtime" "$ENV_FILE"
+# Do not let a missing/unavailable runtime make the script fail at the end.
+ollama_runtime_ps "$runtime" "$ENV_FILE" || true
