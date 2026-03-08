@@ -44,42 +44,38 @@ sanitize_filename_component() {
 
 validate_tar_archive_safety() {
     local archive_path="$1"
-    local entry
-    local path_part
-    local normalized_path
-    local perms
-    local type_char
-    local -a verbose_entries=()
-
-    if ! mapfile -t verbose_entries < <(tar -tvzf "$archive_path"); then
-        print_error "Failed to perform verbose inspection of archive: $archive_path"
+    if ! command -v python3 >/dev/null 2>&1; then
+        print_error "python3 is required to validate archive safety."
         return 1
     fi
 
-    for entry in "${verbose_entries[@]}"; do
-        [[ -n "$entry" ]] || continue
-        perms="${entry%% *}"
-        [[ -n "$perms" ]] || continue
-        type_char="${perms:0:1}"
-        path_part="$(printf '%s\n' "$entry" | awk '{for(i=6;i<=NF;i++) printf(i==6?$i:" "$i); print ""}')"
-        path_part="${path_part%% -> *}"
-        normalized_path="${path_part#./}"
-        if [[ -z "$normalized_path" ]]; then
-            print_error "Unsafe archive entry detected: $entry"
-            return 1
-        fi
-        if [[ "$normalized_path" == /* ]] || [[ "$normalized_path" =~ (^|/)\.\.(/|$) ]]; then
-            print_error "Unsafe archive entry detected: $normalized_path"
-            return 1
-        fi
-        if [[ "$type_char" == "l" || "$type_char" == "h" ]]; then
-            print_error "Unsafe link entry detected in archive: $entry"
-            return 1
-        elif [[ "$type_char" == "c" || "$type_char" == "b" || "$type_char" == "p" || "$type_char" == "s" ]]; then
-            print_error "Unsafe special file entry detected in archive: $entry"
-            return 1
-        fi
-    done
+    if ! python3 - "$archive_path" <<'PY'
+import pathlib
+import sys
+import tarfile
+
+archive = sys.argv[1]
+try:
+    with tarfile.open(archive, "r:gz") as tf:
+        for member in tf.getmembers():
+            name = member.name.lstrip("./")
+            if not name:
+                raise ValueError(f"unsafe archive entry: {member.name}")
+            p = pathlib.PurePosixPath(name)
+            if p.is_absolute() or ".." in p.parts:
+                raise ValueError(f"unsafe archive path: {member.name}")
+            if member.issym() or member.islnk():
+                raise ValueError(f"unsafe link entry: {member.name}")
+            if member.isdev() or member.isfifo():
+                raise ValueError(f"unsafe special entry: {member.name}")
+except Exception as exc:
+    print(str(exc), file=sys.stderr)
+    sys.exit(1)
+PY
+    then
+        print_error "Archive safety validation failed for: $archive_path"
+        return 1
+    fi
 
     return 0
 }
@@ -198,11 +194,21 @@ tmpfile=$(mktemp)
 download_extracted=false
 if DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
     if gzip -t "$tmpfile" >/dev/null 2>&1; then
-        if validate_tar_archive_safety "$tmpfile" && tar --no-same-owner --no-same-permissions -xzf "$tmpfile" -C "$dir"; then
-            print_success "Model ${model:-archive} extracted to $dir."
-            download_extracted=true
+        if validate_tar_archive_safety "$tmpfile"; then
+            extract_dir="$(mktemp -d)"
+            if tar --no-same-owner --no-same-permissions -xzf "$tmpfile" -C "$extract_dir"; then
+                if cp -a "$extract_dir"/. "$dir"/; then
+                    print_success "Model ${model:-archive} extracted to $dir."
+                    download_extracted=true
+                else
+                    print_error "Failed to move extracted archive content into $dir."
+                fi
+            else
+                print_error "Archive extraction failed."
+            fi
+            rm -rf "$extract_dir"
         else
-            print_error "Archive extraction failed."
+            print_error "Archive extraction skipped due to failed safety validation."
         fi
     else
         print_warning "Downloaded file is not a gzip archive; direct URL likely unsupported for this model."
