@@ -200,6 +200,9 @@ elif DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
                     download_extracted=true
                 else
                     print_error "Failed to move extracted archive content into $dir."
+                    rm -rf "$extract_dir"
+                    rm -f "$tmpfile"
+                    exit 1
                 fi
             else
                 print_error "Archive extraction failed."

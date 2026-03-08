@@ -64,8 +64,10 @@ while getopts ":hp:r:" opt; do
     esac
 done
 
+runtime_override="$(printf '%s' "$runtime_override" | tr '[:upper:]' '[:lower:]')"
+
 if [[ ! -f "$ENV_FILE" ]]; then
-    if [[ "$(printf '%s' "$runtime_override" | tr '[:upper:]' '[:lower:]')" == "docker" ]]; then
+    if [[ "$runtime_override" == "docker" ]]; then
         print_info "No .env file found. Creating from .env.example.txt for docker runtime."
         cp "$ROOT_DIR/.env.example.txt" "$ENV_FILE"
     fi
