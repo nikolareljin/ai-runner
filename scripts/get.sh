@@ -77,6 +77,9 @@ validate_tar_archive_safety() {
         if [[ "$type_char" == "l" || "$type_char" == "h" ]]; then
             print_error "Unsafe link entry detected in archive: $entry"
             return 1
+        elif [[ "$type_char" == "c" || "$type_char" == "b" || "$type_char" == "p" || "$type_char" == "s" ]]; then
+            print_error "Unsafe special file entry detected in archive: $entry"
+            return 1
         fi
     done
 }
@@ -105,14 +108,14 @@ get_select_model_any() {
     fi
 
     model_value="$(get_value "Model Name" "Enter any Ollama model name (example: deepseek-ocr)" "$current_model")" || return 1
-    model_value="$(printf '%s' "$model_value" | xargs)"
+    model_value="$(printf '%s' "$model_value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
     if [[ -z "$model_value" ]]; then
         print_error "Model name cannot be empty."
         return 1
     fi
 
     size_value="$(get_value "Model Size/Tag" "Enter size/tag (example: 3b). Use latest for default." "$current_size")" || return 1
-    size_value="$(printf '%s' "${size_value:-latest}" | xargs)"
+    size_value="$(printf '%s' "${size_value:-latest}" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
     [[ -z "$size_value" ]] && size_value="latest"
     printf '%s\n%s\n' "$model_value" "$size_value"
 }

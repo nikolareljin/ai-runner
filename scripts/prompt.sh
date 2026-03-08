@@ -64,6 +64,13 @@ while getopts ":hp:r:" opt; do
     esac
 done
 
+if [[ ! -f "$ENV_FILE" ]]; then
+    if [[ "$(printf '%s' "$runtime_override" | tr '[:upper:]' '[:lower:]')" == "docker" ]]; then
+        print_info "No .env file found. Creating from .env.example.txt for docker runtime."
+        cp "$ROOT_DIR/.env.example.txt" "$ENV_FILE"
+    fi
+fi
+
 if [[ -f "$ENV_FILE" ]]; then
     load_env "$ENV_FILE"
     ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
