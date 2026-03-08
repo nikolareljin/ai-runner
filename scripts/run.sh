@@ -175,6 +175,7 @@ fi
 
 response_json=$(cat "$ROOT_DIR/response.json")
 if ! response=$(format_response "$response_json"); then
+    print_error "Failed to format response from Ollama API. Raw response is saved at $ROOT_DIR/response.json"
     exit 1
 fi
 if [[ -z "$response" || "$response" == "null" ]]; then

@@ -40,10 +40,9 @@ get_select_model_any() {
     dialog_init
     check_if_dialog_installed
 
-    mode=$(dialog --stdout --menu "Select model source" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 10 \
+    if ! mode=$(dialog --stdout --menu "Select model source" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 10 \
         "indexed" "Choose from indexed Ollama models" \
-        "manual" "Enter any model name manually")
-    if [[ -z "$mode" ]]; then
+        "manual" "Enter any model name manually"); then
         print_error "Model selection cancelled."
         return 1
     fi
@@ -143,12 +142,12 @@ create_directory "$dir" >/dev/null
 print_info "Downloading model ${model:-from-url} from $url to $dir"
 
 tmpfile=$(mktemp)
+download_extracted=false
 if DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
     if gzip -t "$tmpfile" >/dev/null 2>&1; then
         if tar -xzf "$tmpfile" -C "$dir"; then
             print_success "Model ${model:-archive} extracted to $dir."
-            rm -f "$tmpfile"
-            exit 0
+            download_extracted=true
         else
             print_error "Archive extraction failed."
         fi
@@ -160,6 +159,9 @@ else
 fi
 
 rm -f "$tmpfile"
+if [[ "$download_extracted" == "true" ]]; then
+    exit 0
+fi
 
 if [[ -n "$model" ]]; then
     tag="${size:-latest}"

@@ -19,9 +19,10 @@ done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_SOURCE")" && pwd)"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/include.sh"
-if load_script_helpers_if_available logging help; then
+if [[ -f "$HELPERS_PATH" ]] && load_script_helpers_if_available logging help; then
     :
 else
+    print_info "script-helpers not initialized; using local lint help fallback."
     display_help() {
         cat <<'EOF'
 Run ShellCheck on tracked shell scripts.
