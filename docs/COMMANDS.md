@@ -61,7 +61,7 @@ Usage:
 ```
 
 Options:
-- `-m <model>`: model name (defaults to current selection or dialog).
+- `-m <model>`: model name (defaults to current selection or dialog). Also supports `model:tag` format (for example: `llama3:8b`) to select a specific tag in non-interactive mode.
 - `-u <url>`: direct tar URL (if available).
 - `-d <dir>`: destination directory (created if missing).
 - `-r <runtime>`: runtime for fallback pull/export (`local` or `docker`).
@@ -70,12 +70,14 @@ Examples:
 
 ```sh
 ./get -m llama3 -d ./models
+./get -m llama3:8b -d ./models
 ./get -u https://ollama.com/models/llama3.tar.gz -d ./models/llama3
 ./get -m llama3 -r docker
 ```
 
 Notes:
 - If run without flags, it opens a dialog to select from indexed models or enter any model manually.
+- In non-interactive mode, use `-m model:tag` when you need a specific tag/size.
 - If a direct tar URL is unavailable, it falls back to runtime pull (`local` CLI or Docker container) and then attempts to export to a local file when supported.
 
 ## ./update

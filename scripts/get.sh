@@ -58,7 +58,10 @@ archive = sys.argv[1]
 try:
     with tarfile.open(archive, "r:gz") as tf:
         for member in tf:
-            name = member.name.lstrip("./")
+            original_name = member.name
+            name = original_name
+            while name.startswith("./"):
+                name = name[2:]
             if not name:
                 raise ValueError(f"unsafe archive entry: {member.name}")
             p = pathlib.PurePosixPath(name)
@@ -66,7 +69,9 @@ try:
                 raise ValueError(f"unsafe archive path: {member.name}")
             if member.issym() or member.islnk():
                 raise ValueError(f"unsafe link entry: {member.name}")
-            if member.isdev() or member.isfifo():
+            if member.ischr() or member.isblk() or member.isfifo():
+                raise ValueError(f"unsafe special entry: {member.name}")
+            if hasattr(member, "issock") and member.issock():
                 raise ValueError(f"unsafe special entry: {member.name}")
 except Exception as exc:
     print(str(exc), file=sys.stderr)
