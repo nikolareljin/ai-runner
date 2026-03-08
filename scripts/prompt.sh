@@ -73,7 +73,6 @@ fi
 
 if [[ -f "$ENV_FILE" ]]; then
     load_env "$ENV_FILE"
-    ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
 fi
 
 model="$(resolve_env_value "model" "llama3" "$ENV_FILE")"

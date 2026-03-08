@@ -194,7 +194,8 @@ elif DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
         if validate_tar_archive_safety "$tmpfile"; then
             extract_dir="$(mktemp -d)"
             if tar --no-same-owner --no-same-permissions -xzf "$tmpfile" -C "$extract_dir"; then
-                if cp -a "$extract_dir"/. "$dir"/; then
+                # Copy extracted files without preserving source ownership/permissions.
+                if cp -R "$extract_dir"/. "$dir"/; then
                     print_success "Model ${model:-archive} extracted to $dir."
                     download_extracted=true
                 else
