@@ -57,7 +57,7 @@ import tarfile
 archive = sys.argv[1]
 try:
     with tarfile.open(archive, "r:gz") as tf:
-        for member in tf.getmembers():
+        for member in tf:
             name = member.name.lstrip("./")
             if not name:
                 raise ValueError(f"unsafe archive entry: {member.name}")
@@ -172,11 +172,6 @@ if [[ -z "$url" && -n "$model" ]]; then
     url="https://ollama.com/models/${model}.tar.gz"
 fi
 
-if [[ -z "$url" ]]; then
-    print_error "No URL provided or derived."
-    exit 1
-fi
-
 if [[ -z "$dir" ]]; then
     base="$ROOT_DIR/models"
     if [[ -n "$size" ]]; then
@@ -192,7 +187,9 @@ print_info "Downloading model ${model:-from-url} from $url to $dir"
 
 tmpfile=$(mktemp)
 download_extracted=false
-if DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
+if [[ -z "$url" ]]; then
+    print_info "No direct archive URL available; skipping direct download and using runtime fallback."
+elif DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
     if gzip -t "$tmpfile" >/dev/null 2>&1; then
         if validate_tar_archive_safety "$tmpfile"; then
             extract_dir="$(mktemp -d)"

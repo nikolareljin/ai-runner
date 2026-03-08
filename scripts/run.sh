@@ -104,7 +104,6 @@ if [[ ! -f "$ENV_FILE" ]]; then
 fi
 
 load_env "$ENV_FILE"
-ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
 runtime="$(ollama_runtime_type "$ENV_FILE" "$runtime_override")"
 ollama_update_env "$ENV_FILE" ollama_runtime "$runtime"
 ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
