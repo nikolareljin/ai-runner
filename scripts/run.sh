@@ -106,6 +106,8 @@ fi
 load_env "$ENV_FILE"
 ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
 runtime="$(ollama_runtime_type "$ENV_FILE" "$runtime_override")"
+ollama_update_env "$ENV_FILE" ollama_runtime "$runtime"
+ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
 generate_endpoint="$(ollama_runtime_generate_endpoint "$ENV_FILE")"
 
 json_file="$(ollama_models_json_path "$MODEL_REPO_DIR")"
@@ -125,7 +127,6 @@ selected_size="$(ollama_dialog_select_size "$json_file" "$selected_model" "$curr
 
 ollama_update_env "$ENV_FILE" model "$selected_model"
 ollama_update_env "$ENV_FILE" size "$selected_size"
-ollama_update_env "$ENV_FILE" ollama_runtime "$runtime"
 
 if [[ -z "$prompt" ]]; then
     dialog_init

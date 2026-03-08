@@ -72,7 +72,11 @@ fi
 model="$(resolve_env_value "model" "llama3" "$ENV_FILE")"
 size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
 runtime="$(ollama_runtime_type "$ENV_FILE" "$runtime_override")"
-generate_endpoint="$(ollama_runtime_generate_endpoint "$ENV_FILE" "$runtime")"
+if [[ -f "$ENV_FILE" ]]; then
+    ollama_update_env "$ENV_FILE" ollama_runtime "$runtime"
+    ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
+fi
+generate_endpoint="$(ollama_runtime_generate_endpoint "$ENV_FILE")"
 
 if [[ -z "$prompt" ]]; then
     dialog_init

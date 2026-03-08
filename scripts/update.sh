@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SCRIPT: update.sh
-# DESCRIPTION: Initialize and update git submodules.
+# DESCRIPTION: Initialize and update the script-helpers git submodule.
 # USAGE: ./scripts/update.sh [-h] [-r]
 # PARAMETERS:
 # -h                : show help
@@ -35,11 +35,11 @@ while getopts ":hr" opt; do
     esac
 done
 
-print_info "Updating git submodules..."
+print_info "Updating script-helpers submodule..."
 git submodule sync --recursive -- "$SUBMODULE_PATH"
 if $update_remote; then
     git submodule update --init --recursive --remote "$SUBMODULE_PATH"
 else
     git submodule update --init --recursive -- "$SUBMODULE_PATH"
 fi
-print_success "Submodules updated."
+print_success "script-helpers submodule updated."

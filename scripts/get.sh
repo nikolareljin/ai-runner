@@ -66,14 +66,14 @@ get_select_model_any() {
     fi
 
     model_value="$(get_value "Model Name" "Enter any Ollama model name (example: deepseek-ocr)" "$current_model")" || return 1
-    model_value="$(echo "$model_value" | xargs)"
+    model_value="$(printf '%s' "$model_value" | xargs)"
     if [[ -z "$model_value" ]]; then
         print_error "Model name cannot be empty."
         return 1
     fi
 
     size_value="$(get_value "Model Size/Tag" "Enter size/tag (example: 3b). Use latest for default." "$current_size")" || return 1
-    size_value="$(echo "${size_value:-latest}" | xargs)"
+    size_value="$(printf '%s' "${size_value:-latest}" | xargs)"
     [[ -z "$size_value" ]] && size_value="latest"
     printf "%s|%s\n" "$model_value" "$size_value"
 }
@@ -173,9 +173,6 @@ fi
 if [[ -n "$model" ]]; then
     tag="${size:-latest}"
     model_ref="$(ollama_model_ref "$model" "$tag")"
-    if [[ -z "$json_file" ]]; then
-        json_file="$(ollama_models_json_path "$MODEL_REPO_DIR")"
-    fi
     if [[ "$runtime" == "docker" ]]; then
         ollama_runtime_ensure_ready "$runtime" "$ENV_FILE"
     fi
