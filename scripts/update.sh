@@ -38,7 +38,7 @@ done
 print_info "Updating script-helpers submodule..."
 git submodule sync --recursive -- "$SUBMODULE_PATH"
 if $update_remote; then
-    git submodule update --init --recursive --remote "$SUBMODULE_PATH"
+    git submodule update --init --recursive --remote -- "$SUBMODULE_PATH"
 else
     git submodule update --init --recursive -- "$SUBMODULE_PATH"
 fi

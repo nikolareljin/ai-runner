@@ -45,24 +45,11 @@ sanitize_filename_component() {
 validate_tar_archive_safety() {
     local archive_path="$1"
     local entry
+    local path_part
+    local normalized_path
     local perms
     local type_char
-    local -a entries=()
     local -a verbose_entries=()
-
-    if ! mapfile -t entries < <(tar -tzf "$archive_path"); then
-        print_error "Failed to inspect archive: $archive_path"
-        return 1
-    fi
-
-    for entry in "${entries[@]}"; do
-        [[ -n "$entry" ]] || continue
-        entry="${entry#./}"
-        if [[ "$entry" == /* ]] || [[ "$entry" =~ (^|/)\.\.(/|$) ]]; then
-            print_error "Unsafe archive entry detected: $entry"
-            return 1
-        fi
-    done
 
     if ! mapfile -t verbose_entries < <(tar -tvzf "$archive_path"); then
         print_error "Failed to perform verbose inspection of archive: $archive_path"
@@ -74,6 +61,17 @@ validate_tar_archive_safety() {
         perms="${entry%% *}"
         [[ -n "$perms" ]] || continue
         type_char="${perms:0:1}"
+        path_part="$(printf '%s\n' "$entry" | awk '{for(i=6;i<=NF;i++) printf(i==6?$i:" "$i); print ""}')"
+        path_part="${path_part%% -> *}"
+        normalized_path="${path_part#./}"
+        if [[ -z "$normalized_path" ]]; then
+            print_error "Unsafe archive entry detected: $entry"
+            return 1
+        fi
+        if [[ "$normalized_path" == /* ]] || [[ "$normalized_path" =~ (^|/)\.\.(/|$) ]]; then
+            print_error "Unsafe archive entry detected: $normalized_path"
+            return 1
+        fi
         if [[ "$type_char" == "l" || "$type_char" == "h" ]]; then
             print_error "Unsafe link entry detected in archive: $entry"
             return 1
