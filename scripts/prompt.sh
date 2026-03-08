@@ -109,8 +109,9 @@ if [[ -z "$prompt" ]]; then
 fi
 
 model_ref="$(ollama_model_ref "$model" "$size")"
+escaped_model_ref=$(json_escape "$model_ref")
 escaped_prompt=$(json_escape "$prompt")
-payload="{\"model\":\"${model_ref}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
+payload="{\"model\":\"${escaped_model_ref}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
 if [[ "$runtime" == "docker" ]]; then
     ollama_runtime_ensure_ready "$runtime" "$ENV_FILE"
 fi

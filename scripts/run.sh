@@ -167,8 +167,9 @@ else
 fi
 
 model_ref="$(ollama_model_ref "$selected_model" "$selected_size")"
+escaped_model_ref=$(json_escape "$model_ref")
 escaped_prompt=$(json_escape "$prompt")
-payload="{\"model\":\"${model_ref}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
+payload="{\"model\":\"${escaped_model_ref}\",\"prompt\":\"${escaped_prompt}\",\"stream\":false}"
 if ! curl -sS -X POST "$generate_endpoint" -d "$payload" > "$ROOT_DIR/response.json"; then
     print_error "Failed to reach Ollama API at $generate_endpoint"
     exit 1

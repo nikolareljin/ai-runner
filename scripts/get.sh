@@ -82,6 +82,8 @@ validate_tar_archive_safety() {
             return 1
         fi
     done
+
+    return 0
 }
 
 get_select_model_any() {
