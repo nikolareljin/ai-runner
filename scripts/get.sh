@@ -155,7 +155,7 @@ while getopts ":hm:u:d:r:" opt; do
     esac
 done
 
-runtime_override="$(printf '%s' "$runtime_override" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')"
+runtime_override="$(normalize_runtime_override "$runtime_override")"
 
 if [[ -f "$ENV_FILE" ]]; then
     load_env "$ENV_FILE"
