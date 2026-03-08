@@ -157,7 +157,10 @@ if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
     current_model="${model:-$(resolve_env_value "model" "" "$ENV_FILE")}"
     current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
     [[ -n "$size" ]] && current_size="$size"
-    mapfile -t selection_lines < <(get_select_model_any "$json_file" "$current_model" "$current_size") || exit 1
+    if ! selection_output="$(get_select_model_any "$json_file" "$current_model" "$current_size")"; then
+        exit 1
+    fi
+    mapfile -t selection_lines <<< "$selection_output"
     if [[ "${#selection_lines[@]}" -lt 2 ]]; then
         print_error "Model selection failed."
         exit 1

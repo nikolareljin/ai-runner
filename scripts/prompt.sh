@@ -64,7 +64,7 @@ while getopts ":hp:r:" opt; do
     esac
 done
 
-runtime_override="$(printf '%s' "$runtime_override" | tr '[:upper:]' '[:lower:]')"
+runtime_override="$(printf '%s' "$runtime_override" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]')"
 
 if [[ ! -f "$ENV_FILE" ]]; then
     if [[ "$runtime_override" == "docker" ]]; then
