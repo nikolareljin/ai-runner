@@ -31,6 +31,17 @@ json_file=""
 
 help() { display_help "$0"; }
 
+sanitize_filename_component() {
+    local value="$1"
+
+    value="$(printf "%s" "$value" | sed -E 's/[^A-Za-z0-9._-]+/_/g')"
+    value="$(printf "%s" "$value" | sed -E 's/\.\.+/_/g; s/^[-._]+//; s/[-._]+$//')"
+    if [[ -z "$value" ]]; then
+        value="unknown"
+    fi
+    printf "%s\n" "$value"
+}
+
 get_select_model_any() {
     local json_file="$1"
     local current_model="${2:-}"
@@ -171,8 +182,9 @@ if [[ -n "$model" ]]; then
     print_info "Attempting fallback via '$runtime' runtime pull for ${model_ref}..."
     if ollama_runtime_pull_model "$runtime" "$ENV_FILE" "$model" "$tag"; then
         if ollama_runtime_supports_export "$runtime" "$ENV_FILE"; then
-            safe_model="${model//\//_}"
-            outbase="${dir}/${safe_model}-${tag}"
+            safe_model="$(sanitize_filename_component "$model")"
+            safe_tag="$(sanitize_filename_component "$tag")"
+            outbase="${dir}/${safe_model}-${safe_tag}"
             if ollama_runtime_export_model "$runtime" "$ENV_FILE" "$model_ref" "${outbase}.ollama"; then
                 print_success "Exported model to ${outbase}.ollama"
                 exit 0
