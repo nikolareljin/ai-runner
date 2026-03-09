@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2026-02-12
+- Feature: add runtime abstraction for Ollama (`local` or `docker`) using shared helpers from `scripts/script-helpers/lib/ollama.sh`.
+- Feature: add Docker-backed Ollama flow with managed container startup, mounted model data dir, and runtime-aware pull/export/ps in `run/get/prompt`.
+- Feature: make `./get` TUI-first in interactive mode and add selector flow for indexed models or manual entry of any model/tag.
+- Fix: prevent `./get` from hard-failing on missing tar URLs (e.g., HTTP 404) when runtime fallback pull can proceed.
+- Fix: treat pull-without-export support as successful fallback and report cache location instead of warning as failure.
+- Refactor: keep `scripts/ollama-runtime.sh` as a compatibility shim while loading runtime APIs from `script-helpers`.
+- Refactor: remove duplicated local helpers in scripts (`ollama_model_ref`, `is_wsl`) and reuse shared functions from `script-helpers`.
+- Config: introduce `ollama_scheme`, `ollama_host`, and `ollama_port`; auto-generate/sync `ollama_url` from these fields in scripts.
+- Config: add shared model-store controls (`ollama_shared_model_store`, `ollama_local_models_dir`) to reuse pulled models across local and Docker runtimes.
+- Docs: update README and command docs for runtime selection, model sharing, and new env structure.
+
 ## 2025-12-30
 - Refactor: move root scripts into `scripts/` and keep entrypoint symlinks (`run`, `get`, `prompt`) at repo root.
 - Tooling: make `scripts/lint.sh` resilient when `scripts/script-helpers` is missing (CI-safe fallback logging).

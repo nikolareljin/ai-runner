@@ -60,3 +60,8 @@ load_script_helpers_if_available() {
 is_wsl() {
     grep -qi "microsoft" /proc/version 2>/dev/null || [[ -n "${WSL_DISTRO_NAME:-}" ]]
 }
+
+normalize_runtime_override() {
+    local value="${1:-}"
+    printf '%s' "$value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]'
+}
