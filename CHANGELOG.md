@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Unreleased
+- Feature: add an `About` dialog to `./run` with GitHub and LinkedIn profile links.
+
 ## 2026-02-12
 - Feature: add runtime abstraction for Ollama (`local` or `docker`) using shared helpers from `scripts/script-helpers/lib/ollama.sh`.
 - Feature: add Docker-backed Ollama flow with managed container startup, mounted model data dir, and runtime-aware pull/export/ps in `run/get/prompt`.

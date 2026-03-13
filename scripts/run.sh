@@ -42,6 +42,45 @@ trap cleanup_screen EXIT
 
 help() { display_help "$0"; }
 
+show_about_dialog() {
+    dialog_init
+    check_if_dialog_installed
+    dialog --title "About ai-runner" --msgbox \
+"ai-runner helps you select, run, and prompt local Ollama models from a dialog-based CLI.
+
+Author profiles
+GitHub: https://github.com/nikolareljin
+LinkedIn: https://www.linkedin.com/in/nikolareljin" \
+        13 76
+}
+
+choose_start_action() {
+    local choice=""
+
+    while true; do
+        dialog_init
+        check_if_dialog_installed
+        if ! choice=$(dialog --stdout --title "ai-runner" --menu "Choose an action" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 10 \
+            "run" "Select a model and send a prompt" \
+            "about" "About" \
+            "quit" "Exit"); then
+            return 1
+        fi
+
+        case "$choice" in
+            run)
+                return 0
+                ;;
+            about)
+                show_about_dialog
+                ;;
+            quit)
+                return 1
+                ;;
+        esac
+    done
+}
+
 install_runner_dependencies() {
     if is_wsl; then
         print_info "WSL2 detected: installing common dependencies; Ollama CLI is expected on Windows host."
@@ -87,6 +126,11 @@ while getopts ":him:p:r:" opt; do
 done
 
 runtime_override="$(normalize_runtime_override "$runtime_override")"
+
+if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! choose_start_action; then
+    print_error "Run cancelled."
+    exit 1
+fi
 
 if $run_install; then
     if [[ "${SKIP_SETUP_DEPS:-0}" == "1" ]]; then
