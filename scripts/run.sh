@@ -45,7 +45,7 @@ help() { display_help "$0"; }
 show_about_dialog() {
     dialog_init
     check_if_dialog_installed
-    dialog --title "About ai-runner" --msgbox \
+    if ! dialog --title "About ai-runner" --msgbox \
 "ai-runner helps you select, run, and prompt local Ollama models from a dialog-based CLI.
 
 Projects
@@ -55,7 +55,9 @@ burn-iso:   https://github.com/nikolareljin/burn-iso
 Author profiles
 GitHub: https://github.com/nikolareljin
 LinkedIn: https://www.linkedin.com/in/nikolareljin" \
-        "$DIALOG_HEIGHT" "$DIALOG_WIDTH"
+        "$DIALOG_HEIGHT" "$DIALOG_WIDTH"; then
+        return 0
+    fi
 }
 
 choose_start_action() {
