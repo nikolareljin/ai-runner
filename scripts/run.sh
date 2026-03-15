@@ -145,7 +145,9 @@ if $run_install; then
 fi
 
 if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install; then
-    if ! choose_start_action; then
+    if choose_start_action; then
+        :
+    else
         status=$?
         if [[ $status -eq 2 ]]; then
             print_info "Run cancelled."
