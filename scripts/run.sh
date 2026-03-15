@@ -48,10 +48,14 @@ show_about_dialog() {
     dialog --title "About ai-runner" --msgbox \
 "ai-runner helps you select, run, and prompt local Ollama models from a dialog-based CLI.
 
+Projects
+AgentVault: https://github.com/nikolareljin/agentvault
+burn-iso:   https://github.com/nikolareljin/burn-iso
+
 Author profiles
 GitHub: https://github.com/nikolareljin
 LinkedIn: https://www.linkedin.com/in/nikolareljin" \
-        13 76
+        "$DIALOG_HEIGHT" "$DIALOG_WIDTH"
 }
 
 choose_start_action() {
@@ -127,11 +131,6 @@ done
 
 runtime_override="$(normalize_runtime_override "$runtime_override")"
 
-if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! choose_start_action; then
-    print_error "Run cancelled."
-    exit 1
-fi
-
 if $run_install; then
     if [[ "${SKIP_SETUP_DEPS:-0}" == "1" ]]; then
         print_warning "SKIP_SETUP_DEPS=1 set; skipping setup-deps."
@@ -142,6 +141,11 @@ if $run_install; then
     else
         install_runner_dependencies
     fi
+fi
+
+if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install && ! choose_start_action; then
+    print_error "Run cancelled."
+    exit 1
 fi
 
 if [[ ! -f "$ENV_FILE" ]]; then

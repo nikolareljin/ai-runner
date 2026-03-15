@@ -88,7 +88,7 @@ Example:
 ./run -r docker -m llama3 -p "Hello"
 ```
 
-In interactive mode, `./run` now opens with a small action menu that includes an `About` dialog with the GitHub and LinkedIn profile links.
+In interactive mode, `./run` now opens with a small action menu that includes an `About` dialog with project links plus the GitHub and LinkedIn profile links.
 
 If NO MODEL was selected, a selector will be displayed - so you can pick one that is available on Ollama:
 
