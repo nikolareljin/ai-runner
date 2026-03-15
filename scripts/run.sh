@@ -80,7 +80,7 @@ choose_start_action() {
                 show_about_dialog
                 ;;
             quit)
-                return 1
+                return 2
                 ;;
         esac
     done
@@ -144,9 +144,16 @@ if $run_install; then
     fi
 fi
 
-if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install && ! choose_start_action; then
-    print_error "Run cancelled."
-    exit 1
+if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install; then
+    if ! choose_start_action; then
+        status=$?
+        if [[ $status -eq 2 ]]; then
+            print_info "Run cancelled."
+            exit 0
+        fi
+        print_error "Failed to open start menu."
+        exit "$status"
+    fi
 fi
 
 if [[ ! -f "$ENV_FILE" ]]; then
