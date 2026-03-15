@@ -61,6 +61,7 @@ LinkedIn: https://www.linkedin.com/in/nikolareljin" \
 
 choose_start_action() {
     local choice=""
+    local status=0
 
     while true; do
         dialog_init
@@ -69,7 +70,11 @@ choose_start_action() {
             "run" "Select a model and send a prompt" \
             "about" "About" \
             "quit" "Exit"); then
-            return 1
+            status=$?
+            if [[ $status -eq 1 || $status -eq 255 ]]; then
+                return 2
+            fi
+            return "$status"
         fi
 
         case "$choice" in
