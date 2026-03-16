@@ -3,6 +3,7 @@
 ## Unreleased
 - Feature: add an `About` dialog to `./run` with project links plus GitHub and LinkedIn profile links.
 - Fix: keep `./run -i` bootstrap flow install-first so fresh machines do not require `dialog` before dependency setup.
+- Fix: clarify `./get` fallback success messages so the requested output directory and the actual Ollama runtime model-store path are reported separately when export is unavailable.
 
 ## 2026-02-12
 - Feature: add runtime abstraction for Ollama (`local` or `docker`) using shared helpers from `scripts/script-helpers/lib/ollama.sh`.
