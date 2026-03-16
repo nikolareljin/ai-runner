@@ -66,10 +66,12 @@ choose_start_action() {
     while true; do
         dialog_init
         check_if_dialog_installed
-        if ! choice=$(dialog --stdout --title "ai-runner" --menu "Choose an action" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 10 \
+        if choice=$(dialog --stdout --title "ai-runner" --menu "Choose an action" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 10 \
             "run" "Select a model and send a prompt" \
             "about" "About" \
             "quit" "Exit"); then
+            :
+        else
             status=$?
             if [[ $status -eq 1 || $status -eq 255 ]]; then
                 return 2
