@@ -42,6 +42,57 @@ trap cleanup_screen EXIT
 
 help() { display_help "$0"; }
 
+show_about_dialog() {
+    dialog_init
+    check_if_dialog_installed
+    dialog --title "About ai-runner" --msgbox \
+"ai-runner helps you select, run, and prompt local Ollama models from a dialog-based CLI.
+
+Projects
+AgentVault: https://github.com/nikolareljin/agentvault
+burn-iso:   https://github.com/nikolareljin/burn-iso
+
+Author profiles
+GitHub: https://github.com/nikolareljin
+LinkedIn: https://www.linkedin.com/in/nikolareljin" \
+        "$DIALOG_HEIGHT" "$DIALOG_WIDTH" || true
+    return 0
+}
+
+choose_start_action() {
+    local choice=""
+    local status=0
+
+    while true; do
+        dialog_init
+        check_if_dialog_installed
+        if choice=$(dialog --stdout --title "ai-runner" --menu "Choose an action" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 10 \
+            "run" "Select a model and send a prompt" \
+            "about" "About" \
+            "quit" "Exit"); then
+            :
+        else
+            status=$?
+            if [[ $status -eq 1 || $status -eq 255 ]]; then
+                return 2
+            fi
+            return "$status"
+        fi
+
+        case "$choice" in
+            run)
+                return 0
+                ;;
+            about)
+                show_about_dialog
+                ;;
+            quit)
+                return 2
+                ;;
+        esac
+    done
+}
+
 install_runner_dependencies() {
     if is_wsl; then
         print_info "WSL2 detected: installing common dependencies; Ollama CLI is expected on Windows host."
@@ -97,6 +148,20 @@ if $run_install; then
         "$ROOT_DIR/scripts/setup-deps.sh"
     else
         install_runner_dependencies
+    fi
+fi
+
+if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install; then
+    if choose_start_action; then
+        :
+    else
+        status=$?
+        if [[ $status -eq 2 ]]; then
+            print_info "Run cancelled."
+            exit 0
+        fi
+        print_error "Failed to open start menu."
+        exit "$status"
     fi
 fi
 
