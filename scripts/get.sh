@@ -275,10 +275,18 @@ if [[ -n "$model" ]]; then
         else
             if [[ "$runtime" == "docker" ]]; then
                 cache_dir="$(ollama_runtime_data_dir "$ENV_FILE")"
-                print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; model is available in ${cache_dir}."
+                if [[ "$dir" == "$cache_dir" ]]; then
+                    print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; the runtime model store is ${cache_dir}."
+                else
+                    print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; no archive was written to ${dir}. The model is available through the Docker runtime store at ${cache_dir}."
+                fi
             else
                 cache_dir="$(ollama_runtime_local_models_dir "$ENV_FILE")"
-                print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; model is available in ${cache_dir}."
+                if [[ "$dir" == "$cache_dir" ]]; then
+                    print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; the local runtime model store is ${cache_dir}."
+                else
+                    print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; no archive was written to ${dir}. The model is available through the local Ollama model store at ${cache_dir}."
+                fi
             fi
             exit 0
         fi

@@ -111,6 +111,7 @@ If you already set up the model, size and have run the steps under `./run`, you 
 
 Use `./get` to download a model archive (tar.gz) to a local folder for offline use or analysis.
 If direct tar download is unavailable, it falls back to model pull via your selected runtime (`local` or `docker`).
+When the active Ollama build does not support `ollama export`, `./get` will report the runtime model-store path separately from the requested output directory, because no exported archive is written in that fallback case.
 
 Examples:
 
