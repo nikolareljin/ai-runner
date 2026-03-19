@@ -42,6 +42,46 @@ sanitize_filename_component() {
     printf "%s\n" "$value"
 }
 
+normalize_compare_path() {
+    local raw_path="$1"
+    local normalized=""
+
+    if [[ -z "$raw_path" ]]; then
+        printf "\n"
+        return 0
+    fi
+
+    if command -v realpath >/dev/null 2>&1; then
+        if normalized="$(realpath -m -- "$raw_path" 2>/dev/null)"; then
+            printf "%s\n" "$normalized"
+            return 0
+        fi
+    fi
+
+    if command -v python3 >/dev/null 2>&1; then
+        if normalized="$(python3 - "$raw_path" <<'PY'
+import os
+import sys
+
+print(os.path.normpath(os.path.abspath(sys.argv[1])))
+PY
+        )"; then
+            printf "%s\n" "$normalized"
+            return 0
+        fi
+    fi
+
+    normalized="${raw_path%/}"
+    [[ -z "$normalized" ]] && normalized="/"
+    printf "%s\n" "$normalized"
+}
+
+paths_match_for_message() {
+    local left="$1"
+    local right="$2"
+    [[ "$(normalize_compare_path "$left")" == "$(normalize_compare_path "$right")" ]]
+}
+
 validate_tar_archive_safety() {
     local archive_path="$1"
     if ! command -v python3 >/dev/null 2>&1; then
@@ -275,14 +315,14 @@ if [[ -n "$model" ]]; then
         else
             if [[ "$runtime" == "docker" ]]; then
                 cache_dir="$(ollama_runtime_data_dir "$ENV_FILE")"
-                if [[ "$dir" == "$cache_dir" ]]; then
+                if paths_match_for_message "$dir" "$cache_dir"; then
                     print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; the runtime model store is ${cache_dir}."
                 else
                     print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; no archive was written to ${dir}. The model is available through the Docker runtime store at ${cache_dir}."
                 fi
             else
                 cache_dir="$(ollama_runtime_local_models_dir "$ENV_FILE")"
-                if [[ "$dir" == "$cache_dir" ]]; then
+                if paths_match_for_message "$dir" "$cache_dir"; then
                     print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; the local runtime model store is ${cache_dir}."
                 else
                     print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; no archive was written to ${dir}. The model is available through the local Ollama model store at ${cache_dir}."
