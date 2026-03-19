@@ -25,8 +25,7 @@ Closes #<issue-number> (or) Relates to #<issue-number>
 Paste dialog screenshots or CLI snippets for before/after.
 
 # Checklist
-- [ ] Lint passes: `./scripts/lint.sh` (use `STRICT=1` to enforce)
+- [ ] Lint passes: `./scripts/lint.sh` (install ShellCheck first; use `STRICT=1` to enforce)
 - [ ] Tests/examples run: `bash tests/test.sh`, `python3 tests/test-chat-python.py`, `node tests/test-chat-javascript.js`
 - [ ] Docs updated (README/AGENTS) if flags/flows changed
 - [ ] No secrets or large artifacts committed (.env, model files)
-

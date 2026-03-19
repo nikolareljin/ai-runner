@@ -121,8 +121,24 @@ Usage:
 Environment:
 - `STRICT=1` to fail on warnings.
 
+Prerequisite:
+- Install ShellCheck first (`brew install shellcheck` or `sudo apt-get install -y shellcheck`).
+
 Example:
 
 ```sh
 STRICT=1 ./scripts/lint.sh
 ```
+
+## bash tests/test.sh
+
+Run the shell smoke-test wrapper for ai-runner.
+
+Usage:
+
+```sh
+bash tests/test.sh [-h]
+```
+
+Current coverage:
+- delegates to `tests/test-chat-completions.sh`

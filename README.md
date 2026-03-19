@@ -46,6 +46,14 @@ See [docs/INSTALL.md](docs/INSTALL.md) for the rest of the installation steps.
 
 Core scripts live in `scripts/`; use the root symlinks where possible.
 
+Linting requires ShellCheck:
+
+```sh
+brew install shellcheck
+# or
+sudo apt-get update && sudo apt-get install -y shellcheck
+```
+
 Install core dependencies before running:
 
 ```sh
@@ -140,6 +148,17 @@ Notes:
 - If a direct tar URL is unavailable (non-gzip response), the script falls back to runtime pull (`local` CLI or Docker container) and, when supported, exports an `.ollama` file in your destination.
 - In Docker mode, pulled models are stored in `ollama_data_dir` (mounted into the container at `/root/.ollama`) so they are reusable across runs.
 - Optional: you can track a local path in `.env` via `model_path=./models/<name>` for your own workflows (not required by `./run`).
+
+# Lint and tests
+
+Run the shell linter and smoke tests with:
+
+```sh
+STRICT=1 ./scripts/lint.sh
+bash tests/test.sh
+python3 tests/test-chat-python.py
+node tests/test-chat-javascript.js
+```
 
 ## get.sh help
 
