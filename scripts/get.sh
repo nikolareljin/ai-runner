@@ -31,6 +31,42 @@ json_file=""
 
 help() { display_help "$0"; }
 
+show_model_catalog_loading_indicator() {
+    local message="${1:-Fetching Ollama model catalog...
+Preparing selection dialog.}"
+    if [[ ! -t 0 || ! -t 1 ]]; then
+        return 0
+    fi
+    dialog_init
+    check_if_dialog_installed || return 0
+    dialog --title "ai-runner" --infobox "$message" 8 60
+    sleep 0.2
+}
+
+prepare_model_menu_cache_with_indicator() {
+    local json_file="$1"
+    local cache_file=""
+
+    cache_file="$(ollama_model_menu_cache_path "$json_file")" || return 1
+    if ollama_model_menu_cache_is_fresh "$cache_file" 1800; then
+        printf '%s
+' "$cache_file"
+        return 0
+    fi
+
+    while true; do
+        show_model_catalog_loading_indicator "Fetching Ollama model catalog...
+Building model selection cache."
+        cache_file="$(ollama_prepare_model_menu_cache "$json_file" "$cache_file")" || return 1
+        if [[ -n "$cache_file" ]] && ollama_model_menu_cache_is_fresh "$cache_file" 1800; then
+            printf '%s
+' "$cache_file"
+            return 0
+        fi
+        sleep 0.2
+    done
+}
+
 sanitize_filename_component() {
     local value="$1"
 
@@ -112,74 +148,32 @@ import tarfile
 
 archive = sys.argv[1]
 try:
-    with tarfile.open(archive, "r:gz") as tf:
-        for member in tf:
-            original_name = member.name
-            name = original_name
-            while name.startswith("./"):
-                name = name[2:]
-            if not name:
-                raise ValueError(f"unsafe archive entry: {member.name}")
-            p = pathlib.PurePosixPath(name)
-            if p.is_absolute() or ".." in p.parts:
-                raise ValueError(f"unsafe archive path: {member.name}")
-            if member.issym() or member.islnk():
-                raise ValueError(f"unsafe link entry: {member.name}")
-            if member.ischr() or member.isblk() or member.isfifo():
-                raise ValueError(f"unsafe special entry: {member.name}")
-            if hasattr(member, "issock") and member.issock():
-                raise ValueError(f"unsafe special entry: {member.name}")
-except Exception as exc:
-    print(str(exc), file=sys.stderr)
-    sys.exit(1)
-PY
-    then
-        print_error "Archive safety validation failed for: $archive_path"
-        return 1
-    fi
-
-    return 0
-}
-
 get_select_model_any() {
     local json_file="$1"
     local current_model="${2:-}"
     local current_size="${3:-latest}"
-    local mode model_value size_value
+    local model_value size_value status
 
-    dialog_init
-    check_if_dialog_installed
-
-    if ! mode=$(dialog --stdout --menu "Select model source" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 10 \
-        "indexed" "Choose from indexed Ollama models" \
-        "manual" "Enter any model name manually"); then
-        print_error "Model selection cancelled."
-        return 1
-    fi
-
-    if [[ "$mode" == "indexed" ]]; then
+    while true; do
         model_value="$(ollama_dialog_select_model "$json_file" "$current_model")" || return 1
-        size_value="$(ollama_dialog_select_size "$json_file" "$model_value" "$current_size")" || return 1
-        printf '%s\n%s\n' "$model_value" "$size_value"
-        return 0
-    fi
-
-    model_value="$(get_value "Model Name" "Enter any Ollama model name (example: deepseek-ocr)" "$current_model")" || return 1
-    model_value="$(printf '%s' "$model_value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
-    if [[ -z "$model_value" ]]; then
-        print_error "Model name cannot be empty."
-        return 1
-    fi
-
-    size_value="$(get_value "Model Size/Tag" "Enter size/tag (example: 3b). Use latest for default." "$current_size")" || return 1
-    size_value="$(printf '%s' "${size_value:-latest}" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
-    [[ -z "$size_value" ]] && size_value="latest"
-    printf '%s\n%s\n' "$model_value" "$size_value"
+        if size_value="$(ollama_dialog_select_size "$json_file" "$model_value" "$current_size")"; then
+            printf '%s\n%s\n' "$model_value" "$size_value"
+            return 0
+        fi
+        status=$?
+        if [[ $status -eq 2 ]]; then
+            current_model="$model_value"
+            continue
+        fi
+        return "$status"
+    done
 }
 
 model=""
 size=""
 url=""
+dir=""
+runtime_override=""
 dir=""
 runtime_override=""
 
@@ -214,6 +208,7 @@ if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
         print_info "Model index not found. Preparing..."
         json_file="$(ollama_prepare_models_index "$MODEL_REPO_DIR")"
     fi
+    export OLLAMA_MODEL_MENU_CACHE_FILE="$(prepare_model_menu_cache_with_indicator "$json_file")"
 
     current_model="${model:-$(resolve_env_value "model" "" "$ENV_FILE")}"
     current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"

@@ -76,7 +76,8 @@ Examples:
 ```
 
 Notes:
-- If run without flags, it opens a dialog to select from indexed models or enter any model manually.
+- If run without flags, it opens a dialog to browse official Ollama library models and pick a model and tag.
+- The indexed catalog is refreshed from the Ollama library plus search slices, while the interactive selector defaults to official un-namespaced library models.
 - In non-interactive mode, use `-m model:tag` when you need a specific tag/size.
 - If a direct tar URL is unavailable, it falls back to runtime pull (`local` CLI or Docker container) and then attempts to export to a local file when supported.
 

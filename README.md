@@ -134,9 +134,8 @@ Examples:
 
 Notes:
 - The script creates the destination directory if it does not exist and extracts the archive there.
-- If you run without flags, it opens a dialog to choose either:
-  - indexed selection (model + size from model index), or
-  - manual entry (any Ollama model name/tag).
+- If you run without flags, it opens a dialog to browse official Ollama library models and pick a model and tag.
+- Indexed browsing refreshes the local model index from `/library` plus search slices, but the interactive selector defaults to official un-namespaced Ollama library models for a safer primary list.
 - Default destination remains `./models/<model>-<size>`.
 - To run a model with Ollama, prefer `./run` to select and pull a model (internally uses `ollama pull`), e.g.:
 
