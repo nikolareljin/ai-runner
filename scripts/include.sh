@@ -26,6 +26,10 @@ print_success() { printf "OK: %s\n" "$1"; }
 print_warning() { printf "WARN: %s\n" "$1"; }
 print_error() { printf "ERROR: %s\n" "$1" >&2; }
 
+OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS="${OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS:-1800}"
+OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS="${OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS:-0.2}"
+OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS="${OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS:-5}"
+
 prompt_install_script_helpers() {
     if [[ -f "$HELPERS_PATH" ]]; then
         return 0
@@ -80,12 +84,12 @@ Preparing selection dialog.}"
 
 prepare_model_menu_cache_with_indicator() {
     local json_file="$1"
-    local max_attempts="${2:-5}"
+    local max_attempts="${2:-$OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS}"
     local cache_file=""
     local attempt=1
 
     cache_file="$(ollama_model_menu_cache_path "$json_file")" || return 1
-    if ollama_model_menu_cache_is_fresh "$cache_file" 1800; then
+    if ollama_model_menu_cache_is_fresh "$cache_file" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
         printf '%s\n' "$cache_file"
         return 0
     fi
@@ -97,16 +101,16 @@ prepare_model_menu_cache_with_indicator() {
 Building model selection cache."
         if ! prepared_cache="$(ollama_prepare_model_menu_cache "$json_file" "$cache_file")"; then
             attempt=$((attempt + 1))
-            sleep 0.2
+            sleep "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
             continue
         fi
         cache_file="$prepared_cache"
-        if [[ -n "$cache_file" ]] && ollama_model_menu_cache_is_fresh "$cache_file" 1800; then
+        if [[ -n "$cache_file" ]] && ollama_model_menu_cache_is_fresh "$cache_file" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
             printf '%s\n' "$cache_file"
             return 0
         fi
         attempt=$((attempt + 1))
-        sleep 0.2
+        sleep "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
     done
 
     print_error "Failed to prepare a fresh model selection cache after ${max_attempts} attempts."

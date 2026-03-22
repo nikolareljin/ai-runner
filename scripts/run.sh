@@ -181,7 +181,16 @@ if [[ ! -f "$json_file" ]]; then
     print_info "Model index not found. Preparing..."
     json_file="$(ollama_prepare_models_index "$MODEL_REPO_DIR")"
 fi
-export OLLAMA_MODEL_MENU_CACHE_FILE="$(prepare_model_menu_cache_with_indicator "$json_file")"
+cache_file="$(prepare_model_menu_cache_with_indicator "$json_file")" || {
+    status=$?
+    print_error "Failed to prepare model menu cache."
+    exit "$status"
+}
+if [[ -z "$cache_file" ]]; then
+    print_error "Model menu cache path is empty."
+    exit 1
+fi
+export OLLAMA_MODEL_MENU_CACHE_FILE="$cache_file"
 
 current_model="$(resolve_env_value "model" "$DEFAULT_MODEL" "$ENV_FILE")"
 if [[ -n "$model" ]]; then
@@ -190,7 +199,15 @@ fi
 
 current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
 while true; do
-    selected_model="$(ollama_dialog_select_model "$json_file" "$current_model")"
+    if ! selected_model="$(ollama_dialog_select_model "$json_file" "$current_model")"; then
+        status=$?
+        if [[ $status -eq 2 ]]; then
+            print_info "Model selection cancelled."
+            exit 0
+        fi
+        print_error "Failed to select model."
+        exit "$status"
+    fi
     if selected_size="$(ollama_dialog_select_size "$json_file" "$selected_model" "$current_size")"; then
         break
     fi
