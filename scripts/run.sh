@@ -181,16 +181,11 @@ if [[ ! -f "$json_file" ]]; then
     print_info "Model index not found. Preparing..."
     json_file="$(ollama_prepare_models_index "$MODEL_REPO_DIR")"
 fi
-cache_file="$(prepare_model_menu_cache_with_indicator "$json_file")" || {
-    status=$?
-    print_error "Failed to prepare model menu cache."
-    exit "$status"
-}
-if [[ -z "$cache_file" ]]; then
-    print_error "Model menu cache path is empty."
-    exit 1
+if cache_file="$(require_model_menu_cache_file "$json_file")"; then
+    :
+else
+    exit $?
 fi
-export OLLAMA_MODEL_MENU_CACHE_FILE="$cache_file"
 
 current_model="$(resolve_env_value "model" "$DEFAULT_MODEL" "$ENV_FILE")"
 if [[ -n "$model" ]]; then

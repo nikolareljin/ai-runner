@@ -94,6 +94,46 @@ coerce_positive_integer() {
     printf '%s\n' "$fallback"
 }
 
+coerce_nonnegative_sleep_delay() {
+    local value="${1:-}"
+    local fallback="${2:-1}"
+
+    if [[ "$value" =~ ^([0-9]+([.][0-9]+)?|[.][0-9]+)$ ]]; then
+        printf '%s\n' "$value"
+        return 0
+    fi
+
+    printf '%s\n' "$fallback"
+}
+
+sleep_for_cache_retry_delay() {
+    local delay="${1:-$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS}"
+
+    delay="$(coerce_nonnegative_sleep_delay "$delay" "1")"
+    sleep "$delay"
+}
+
+require_model_menu_cache_file() {
+    local json_file="$1"
+    local cache_file=""
+    local status=0
+
+    if cache_file="$(prepare_model_menu_cache_with_indicator "$json_file")"; then
+        :
+    else
+        status=$?
+        print_error "Failed to prepare model menu cache."
+        return "$status"
+    fi
+    if [[ -z "$cache_file" ]]; then
+        print_error "Model menu cache path is empty."
+        return 1
+    fi
+
+    export OLLAMA_MODEL_MENU_CACHE_FILE="$cache_file"
+    printf '%s\n' "$cache_file"
+}
+
 prepare_model_menu_cache_with_indicator() {
     local json_file="$1"
     local max_attempts="${2:-$OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS}"
@@ -111,10 +151,12 @@ prepare_model_menu_cache_with_indicator() {
     while (( attempt <= max_attempts )); do
         local prepared_cache=""
 
-        show_model_catalog_loading_indicator $'Fetching Ollama model catalog...\nBuilding model selection cache.'
+        local loading_message=$'Fetching Ollama model catalog...\nBuilding model selection cache.'
+
+        show_model_catalog_loading_indicator "$loading_message"
         if ! prepared_cache="$(ollama_prepare_model_menu_cache "$json_file" "$cache_path")"; then
             attempt=$((attempt + 1))
-            sleep "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
+            sleep_for_cache_retry_delay "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
             continue
         fi
         if [[ -n "$prepared_cache" ]] && ollama_model_menu_cache_is_fresh "$prepared_cache" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
@@ -122,7 +164,7 @@ prepare_model_menu_cache_with_indicator() {
             return 0
         fi
         attempt=$((attempt + 1))
-        sleep "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
+        sleep_for_cache_retry_delay "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
     done
 
     return 1
