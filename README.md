@@ -46,6 +46,14 @@ See [docs/INSTALL.md](docs/INSTALL.md) for the rest of the installation steps.
 
 Core scripts live in `scripts/`; use the root symlinks where possible.
 
+Linting requires ShellCheck:
+
+```sh
+brew install shellcheck
+# or
+sudo apt-get update && sudo apt-get install -y shellcheck
+```
+
 Install core dependencies before running:
 
 ```sh
@@ -111,6 +119,7 @@ If you already set up the model, size and have run the steps under `./run`, you 
 
 Use `./get` to download a model archive (tar.gz) to a local folder for offline use or analysis.
 If direct tar download is unavailable, it falls back to model pull via your selected runtime (`local` or `docker`).
+When the active Ollama build does not support `ollama export`, `./get` will report the runtime model-store path separately from the requested output directory, because no exported archive is written in that fallback case.
 
 Examples:
 
@@ -125,9 +134,8 @@ Examples:
 
 Notes:
 - The script creates the destination directory if it does not exist and extracts the archive there.
-- If you run without flags, it opens a dialog to choose either:
-  - indexed selection (model + size from model index), or
-  - manual entry (any Ollama model name/tag).
+- If you run without flags, it opens a dialog to browse official Ollama library models and pick a model and tag.
+- Indexed browsing refreshes the local model index from `/library` plus search slices, but the interactive selector defaults to official un-namespaced Ollama library models for a safer primary list.
 - Default destination remains `./models/<model>-<size>`.
 - To run a model with Ollama, prefer `./run` to select and pull a model (internally uses `ollama pull`), e.g.:
 
@@ -139,6 +147,17 @@ Notes:
 - If a direct tar URL is unavailable (non-gzip response), the script falls back to runtime pull (`local` CLI or Docker container) and, when supported, exports an `.ollama` file in your destination.
 - In Docker mode, pulled models are stored in `ollama_data_dir` (mounted into the container at `/root/.ollama`) so they are reusable across runs.
 - Optional: you can track a local path in `.env` via `model_path=./models/<name>` for your own workflows (not required by `./run`).
+
+# Lint and tests
+
+Run the shell linter and smoke tests with:
+
+```sh
+STRICT=1 ./scripts/lint.sh
+bash tests/test.sh
+python3 tests/test-chat-python.py
+node tests/test-chat-javascript.js
+```
 
 ## get.sh help
 
