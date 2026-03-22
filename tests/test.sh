@@ -39,6 +39,9 @@ while getopts ":h" opt; do
 done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+cd "$PROJECT_ROOT"
 
 printf 'Running shell smoke tests...\n'
 bash "$SCRIPT_DIR/test-chat-completions.sh"

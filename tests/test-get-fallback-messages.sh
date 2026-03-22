@@ -39,6 +39,8 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # shellcheck source=/dev/null
 source "$PROJECT_ROOT/scripts/include.sh"
 
+cd "$PROJECT_ROOT"
+
 assert_contains() {
     local haystack=$1
     local needle=$2
@@ -62,3 +64,13 @@ assert_contains "$docker_diff" "Docker runtime store at ${models_dir}." "docker_
 assert_contains "$local_same" "the local runtime model store is ${models_dir}." "local_same: local runtime model store path"
 assert_contains "$local_diff" "no archive was written to ./models/custom." "local_diff: no archive written message"
 assert_contains "$local_diff" "local Ollama model store at ${models_dir}." "local_diff: local Ollama model store path"
+
+ollama_model_menu_cache_path() { printf '%s\n' "$PROJECT_ROOT/.tmp-menu-cache.json"; }
+ollama_model_menu_cache_is_fresh() { return 1; }
+ollama_prepare_model_menu_cache() { return 1; }
+show_model_catalog_loading_indicator() { :; }
+
+if OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=bogus OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS=0 prepare_model_menu_cache_with_indicator "$PROJECT_ROOT/ollama-get-models/code/ollama_models.json"; then
+    printf 'Expected invalid max attempts to fall back and return failure after retries.\n' >&2
+    exit 1
+fi

@@ -27,7 +27,7 @@ print_warning() { printf "WARN: %s\n" "$1"; }
 print_error() { printf "ERROR: %s\n" "$1" >&2; }
 
 OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS="${OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS:-1800}"
-OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS="${OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS:-0.2}"
+OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS="${OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS:-1}"
 OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS="${OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS:-5}"
 
 prompt_install_script_helpers() {
@@ -82,11 +82,25 @@ show_model_catalog_loading_indicator() {
     sleep 0.2
 }
 
+coerce_positive_integer() {
+    local value="${1:-}"
+    local fallback="${2:-1}"
+
+    if [[ "$value" =~ ^[1-9][0-9]*$ ]]; then
+        printf '%s\n' "$value"
+        return 0
+    fi
+
+    printf '%s\n' "$fallback"
+}
+
 prepare_model_menu_cache_with_indicator() {
     local json_file="$1"
     local max_attempts="${2:-$OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS}"
     local cache_path=""
     local attempt=1
+
+    max_attempts="$(coerce_positive_integer "$max_attempts" "5")"
 
     cache_path="$(ollama_model_menu_cache_path "$json_file")" || return 1
     if ollama_model_menu_cache_is_fresh "$cache_path" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
