@@ -31,42 +31,6 @@ json_file=""
 
 help() { display_help "$0"; }
 
-show_model_catalog_loading_indicator() {
-    local message="${1:-Fetching Ollama model catalog...
-Preparing selection dialog.}"
-    if [[ ! -t 0 || ! -t 1 ]]; then
-        return 0
-    fi
-    dialog_init
-    check_if_dialog_installed || return 0
-    dialog --title "ai-runner" --infobox "$message" 8 60
-    sleep 0.2
-}
-
-prepare_model_menu_cache_with_indicator() {
-    local json_file="$1"
-    local cache_file=""
-
-    cache_file="$(ollama_model_menu_cache_path "$json_file")" || return 1
-    if ollama_model_menu_cache_is_fresh "$cache_file" 1800; then
-        printf '%s
-' "$cache_file"
-        return 0
-    fi
-
-    while true; do
-        show_model_catalog_loading_indicator "Fetching Ollama model catalog...
-Building model selection cache."
-        cache_file="$(ollama_prepare_model_menu_cache "$json_file" "$cache_file")" || return 1
-        if [[ -n "$cache_file" ]] && ollama_model_menu_cache_is_fresh "$cache_file" 1800; then
-            printf '%s
-' "$cache_file"
-            return 0
-        fi
-        sleep 0.2
-    done
-}
-
 sanitize_filename_component() {
     local value="$1"
 
@@ -76,46 +40,6 @@ sanitize_filename_component() {
         value="unknown"
     fi
     printf "%s\n" "$value"
-}
-
-normalize_compare_path() {
-    local raw_path="$1"
-    local normalized=""
-
-    if [[ -z "$raw_path" ]]; then
-        printf "\n"
-        return 0
-    fi
-
-    if command -v realpath >/dev/null 2>&1; then
-        if normalized="$(realpath -m -- "$raw_path" 2>/dev/null)"; then
-            printf "%s\n" "$normalized"
-            return 0
-        fi
-    fi
-
-    if command -v python3 >/dev/null 2>&1; then
-        if normalized="$(python3 - "$raw_path" <<'PY'
-import os
-import sys
-
-print(os.path.normpath(os.path.abspath(sys.argv[1])))
-PY
-        )"; then
-            printf "%s\n" "$normalized"
-            return 0
-        fi
-    fi
-
-    normalized="${raw_path%/}"
-    [[ -z "$normalized" ]] && normalized="/"
-    printf "%s\n" "$normalized"
-}
-
-paths_match_for_message() {
-    local left="$1"
-    local right="$2"
-    [[ "$(normalize_compare_path "$left")" == "$(normalize_compare_path "$right")" ]]
 }
 
 validate_tar_archive_safety() {
@@ -148,6 +72,35 @@ import tarfile
 
 archive = sys.argv[1]
 try:
+    with tarfile.open(archive, "r:gz") as tf:
+        for member in tf:
+            original_name = member.name
+            name = original_name
+            while name.startswith("./"):
+                name = name[2:]
+            if not name:
+                raise ValueError(f"unsafe archive entry: {member.name}")
+            p = pathlib.PurePosixPath(name)
+            if p.is_absolute() or ".." in p.parts:
+                raise ValueError(f"unsafe archive path: {member.name}")
+            if member.issym() or member.islnk():
+                raise ValueError(f"unsafe link entry: {member.name}")
+            if member.ischr() or member.isblk() or member.isfifo():
+                raise ValueError(f"unsafe special entry: {member.name}")
+            if hasattr(member, "issock") and member.issock():
+                raise ValueError(f"unsafe special entry: {member.name}")
+except Exception as exc:
+    print(str(exc), file=sys.stderr)
+    sys.exit(1)
+PY
+    then
+        print_error "Archive safety validation failed for: $archive_path"
+        return 1
+    fi
+
+    return 0
+}
+
 get_select_model_any() {
     local json_file="$1"
     local current_model="${2:-}"
@@ -172,8 +125,6 @@ get_select_model_any() {
 model=""
 size=""
 url=""
-dir=""
-runtime_override=""
 dir=""
 runtime_override=""
 
@@ -310,18 +261,10 @@ if [[ -n "$model" ]]; then
         else
             if [[ "$runtime" == "docker" ]]; then
                 cache_dir="$(ollama_runtime_data_dir "$ENV_FILE")"
-                if paths_match_for_message "$dir" "$cache_dir"; then
-                    print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; the runtime model store is ${cache_dir}."
-                else
-                    print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; no archive was written to ${dir}. The model is available through the Docker runtime store at ${cache_dir}."
-                fi
+                print_success "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             else
                 cache_dir="$(ollama_runtime_local_models_dir "$ENV_FILE")"
-                if paths_match_for_message "$dir" "$cache_dir"; then
-                    print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; the local runtime model store is ${cache_dir}."
-                else
-                    print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; no archive was written to ${dir}. The model is available through the local Ollama model store at ${cache_dir}."
-                fi
+                print_success "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             fi
             exit 0
         fi

@@ -20,6 +20,7 @@ Options:
 
 Current coverage:
   - tests/test-chat-completions.sh
+  - tests/test-get-fallback-messages.sh
 EOF
 }
 
@@ -41,4 +42,5 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 printf 'Running shell smoke tests...\n'
 bash "$SCRIPT_DIR/test-chat-completions.sh"
+bash "$SCRIPT_DIR/test-get-fallback-messages.sh"
 printf 'Shell smoke tests completed.\n'

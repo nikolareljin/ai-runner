@@ -120,42 +120,6 @@ copy_to_clipboard_safe() {
     fi
 }
 
-show_model_catalog_loading_indicator() {
-    local message="${1:-Fetching Ollama model catalog...
-Preparing selection dialog.}"
-    if [[ ! -t 0 || ! -t 1 ]]; then
-        return 0
-    fi
-    dialog_init
-    check_if_dialog_installed || return 0
-    dialog --title "ai-runner" --infobox "$message" 8 60
-    sleep 0.2
-}
-
-prepare_model_menu_cache_with_indicator() {
-    local json_file="$1"
-    local cache_file=""
-
-    cache_file="$(ollama_model_menu_cache_path "$json_file")" || return 1
-    if ollama_model_menu_cache_is_fresh "$cache_file" 1800; then
-        printf '%s
-' "$cache_file"
-        return 0
-    fi
-
-    while true; do
-        show_model_catalog_loading_indicator "Fetching Ollama model catalog...
-Building model selection cache."
-        cache_file="$(ollama_prepare_model_menu_cache "$json_file" "$cache_file")" || return 1
-        if [[ -n "$cache_file" ]] && ollama_model_menu_cache_is_fresh "$cache_file" 1800; then
-            printf '%s
-' "$cache_file"
-            return 0
-        fi
-        sleep 0.2
-    done
-}
-
 run_install=false
 model=""
 prompt=""
