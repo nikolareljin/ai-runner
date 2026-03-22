@@ -108,7 +108,10 @@ get_select_model_any() {
     local model_value size_value status
 
     while true; do
-        model_value="$(ollama_dialog_select_model "$json_file" "$current_model")" || return 1
+        if ! model_value="$(ollama_dialog_select_model "$json_file" "$current_model")"; then
+            status=$?
+            return "$status"
+        fi
         if size_value="$(ollama_dialog_select_size "$json_file" "$model_value" "$current_size")"; then
             printf '%s\n%s\n' "$model_value" "$size_value"
             return 0
@@ -160,8 +163,9 @@ if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
         json_file="$(ollama_prepare_models_index "$MODEL_REPO_DIR")"
     fi
     if ! menu_cache_file="$(prepare_model_menu_cache_with_indicator "$json_file")"; then
+        status=$?
         print_error "Failed to prepare model menu cache."
-        exit 1
+        exit "$status"
     fi
     if [[ -z "$menu_cache_file" ]]; then
         print_error "Model menu cache path is empty."

@@ -154,7 +154,13 @@ PY
 paths_match_for_message() {
     local left="$1"
     local right="$2"
-    [[ "$(normalize_compare_path "$left")" == "$(normalize_compare_path "$right")" ]]
+    local left_norm
+    local right_norm
+
+    left_norm="$(normalize_compare_path "$left")"
+    right_norm="$(normalize_compare_path "$right")"
+
+    [[ "$left_norm" == "$right_norm" ]]
 }
 
 ollama_export_unavailable_message() {
