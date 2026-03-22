@@ -71,8 +71,8 @@ normalize_runtime_override() {
 }
 
 show_model_catalog_loading_indicator() {
-    local message="${1:-Fetching Ollama model catalog...
-Preparing selection dialog.}"
+    local default_message=$'Fetching Ollama model catalog...\nPreparing selection dialog.'
+    local message="${1:-$default_message}"
     if [[ ! -t 0 || ! -t 1 ]]; then
         return 0
     fi
@@ -85,35 +85,32 @@ Preparing selection dialog.}"
 prepare_model_menu_cache_with_indicator() {
     local json_file="$1"
     local max_attempts="${2:-$OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS}"
-    local cache_file=""
+    local cache_path=""
     local attempt=1
 
-    cache_file="$(ollama_model_menu_cache_path "$json_file")" || return 1
-    if ollama_model_menu_cache_is_fresh "$cache_file" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
-        printf '%s\n' "$cache_file"
+    cache_path="$(ollama_model_menu_cache_path "$json_file")" || return 1
+    if ollama_model_menu_cache_is_fresh "$cache_path" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
+        printf '%s\n' "$cache_path"
         return 0
     fi
 
     while (( attempt <= max_attempts )); do
         local prepared_cache=""
 
-        show_model_catalog_loading_indicator "Fetching Ollama model catalog...
-Building model selection cache."
-        if ! prepared_cache="$(ollama_prepare_model_menu_cache "$json_file" "$cache_file")"; then
+        show_model_catalog_loading_indicator $'Fetching Ollama model catalog...\nBuilding model selection cache.'
+        if ! prepared_cache="$(ollama_prepare_model_menu_cache "$json_file" "$cache_path")"; then
             attempt=$((attempt + 1))
             sleep "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
             continue
         fi
-        cache_file="$prepared_cache"
-        if [[ -n "$cache_file" ]] && ollama_model_menu_cache_is_fresh "$cache_file" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
-            printf '%s\n' "$cache_file"
+        if [[ -n "$prepared_cache" ]] && ollama_model_menu_cache_is_fresh "$prepared_cache" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
+            printf '%s\n' "$prepared_cache"
             return 0
         fi
         attempt=$((attempt + 1))
         sleep "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
     done
 
-    print_error "Failed to prepare a fresh model selection cache after ${max_attempts} attempts."
     return 1
 }
 
@@ -122,33 +119,41 @@ normalize_compare_path() {
     local normalized=""
 
     if [[ -z "$raw_path" ]]; then
-        printf "\n"
+        printf '\n'
         return 0
     fi
 
     if command -v realpath >/dev/null 2>&1; then
         if normalized="$(realpath -m -- "$raw_path" 2>/dev/null)"; then
-            printf "%s\n" "$normalized"
+            printf '%s\n' "$normalized"
             return 0
         fi
     fi
 
     if command -v python3 >/dev/null 2>&1; then
-        if normalized="$(python3 - "$raw_path" <<'PY'
+        if normalized="$(python3 - "$raw_path" <<'PY2'
 import os
 import sys
 
 print(os.path.normpath(os.path.abspath(sys.argv[1])))
-PY
+PY2
         )"; then
-            printf "%s\n" "$normalized"
+            printf '%s\n' "$normalized"
             return 0
         fi
     fi
 
-    normalized="${raw_path%/}"
+    if [[ "$raw_path" == "." || "$raw_path" == "./" ]]; then
+        normalized="$PWD"
+    elif [[ "$raw_path" != /* ]]; then
+        normalized="$PWD/${raw_path#./}"
+    else
+        normalized="$raw_path"
+    fi
+
+    normalized="${normalized%/}"
     [[ -z "$normalized" ]] && normalized="/"
-    printf "%s\n" "$normalized"
+    printf '%s\n' "$normalized"
 }
 
 paths_match_for_message() {
