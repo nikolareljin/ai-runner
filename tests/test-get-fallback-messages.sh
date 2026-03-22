@@ -71,26 +71,31 @@ ollama_prepare_model_menu_cache() { return 1; }
 show_model_catalog_loading_indicator() { :; }
 
 if OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=bogus OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS=0 prepare_model_menu_cache_with_indicator "$PROJECT_ROOT/ollama-get-models/code/ollama_models.json"; then
-    printf 'Expected invalid max attempts to fall back and return failure after retries.
-' >&2
+    printf 'Expected invalid max attempts to fall back and return failure after retries.\n' >&2
     exit 1
 fi
 
 if OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=1 OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS=bogus prepare_model_menu_cache_with_indicator "$PROJECT_ROOT/ollama-get-models/code/ollama_models.json"; then
-    printf 'Expected invalid retry delay to fall back and still return failure after retries.
-' >&2
+    printf 'Expected invalid retry delay to fall back and still return failure after retries.\n' >&2
     exit 1
 fi
 
 if OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=1 OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS=bogus require_model_menu_cache_file "$PROJECT_ROOT/ollama-get-models/code/ollama_models.json"; then
-    printf 'Expected require_model_menu_cache_file to fail when cache prep fails.
-' >&2
+    printf 'Expected require_model_menu_cache_file to fail when cache prep fails.\n' >&2
     exit 1
 fi
 
-ollama_prepare_model_menu_cache() { printf '%s
-' "$PROJECT_ROOT/.tmp-menu-cache.json"; }
+sleep_calls=0
+sleep_for_cache_retry_delay() { sleep_calls=$((sleep_calls + 1)); }
+OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=1 OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS=0 prepare_model_menu_cache_with_indicator "$PROJECT_ROOT/ollama-get-models/code/ollama_models.json" >/dev/null 2>&1 || true
+if [[ $sleep_calls -ne 0 ]]; then
+    printf 'Expected no retry sleep after the last allowed cache-prep attempt.\n' >&2
+    exit 1
+fi
+
+ollama_prepare_model_menu_cache() { printf '%s\n' "$PROJECT_ROOT/.tmp-menu-cache.json"; }
 ollama_model_menu_cache_is_fresh() { [[ "$1" == "$PROJECT_ROOT/.tmp-menu-cache.json" ]]; }
+sleep_for_cache_retry_delay() { :; }
 cache_output_file="$PROJECT_ROOT/.tmp-cache-output.txt"
 rm -f "$cache_output_file"
 require_model_menu_cache_file "$PROJECT_ROOT/ollama-get-models/code/ollama_models.json" >"$cache_output_file"

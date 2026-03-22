@@ -155,16 +155,20 @@ prepare_model_menu_cache_with_indicator() {
 
         show_model_catalog_loading_indicator "$loading_message"
         if ! prepared_cache="$(ollama_prepare_model_menu_cache "$json_file" "$cache_path")"; then
+            if (( attempt < max_attempts )); then
+                sleep_for_cache_retry_delay "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
+            fi
             attempt=$((attempt + 1))
-            sleep_for_cache_retry_delay "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
             continue
         fi
         if [[ -n "$prepared_cache" ]] && ollama_model_menu_cache_is_fresh "$prepared_cache" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
             printf '%s\n' "$prepared_cache"
             return 0
         fi
+        if (( attempt < max_attempts )); then
+            sleep_for_cache_retry_delay "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
+        fi
         attempt=$((attempt + 1))
-        sleep_for_cache_retry_delay "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
     done
 
     return 1
