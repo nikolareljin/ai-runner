@@ -143,3 +143,4 @@ bash tests/test.sh [-h]
 
 Current coverage:
 - delegates to `tests/test-chat-completions.sh`
+- delegates to `tests/test-get-fallback-messages.sh`

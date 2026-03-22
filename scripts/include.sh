@@ -91,9 +91,16 @@ prepare_model_menu_cache_with_indicator() {
     fi
 
     while (( attempt <= max_attempts )); do
+        local prepared_cache=""
+
         show_model_catalog_loading_indicator "Fetching Ollama model catalog...
 Building model selection cache."
-        cache_file="$(ollama_prepare_model_menu_cache "$json_file" "$cache_file")" || return 1
+        if ! prepared_cache="$(ollama_prepare_model_menu_cache "$json_file" "$cache_file")"; then
+            attempt=$((attempt + 1))
+            sleep 0.2
+            continue
+        fi
+        cache_file="$prepared_cache"
         if [[ -n "$cache_file" ]] && ollama_model_menu_cache_is_fresh "$cache_file" 1800; then
             printf '%s\n' "$cache_file"
             return 0

@@ -39,7 +39,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # shellcheck source=/dev/null
 source "$PROJECT_ROOT/scripts/include.sh"
 
-models_dir="$(pwd)/models"
+models_dir="${PROJECT_ROOT}/models"
 docker_same="$(ollama_export_unavailable_message docker "./models/" "$models_dir")"
 docker_diff="$(ollama_export_unavailable_message docker "./models/custom" "$models_dir")"
 local_same="$(ollama_export_unavailable_message local "./models/" "$models_dir")"
