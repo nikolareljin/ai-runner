@@ -24,6 +24,7 @@
   - `node tests/test-chat-javascript.js`
   - `bash tests/test-chat-completions.sh`
 - Lint shell scripts: `./scripts/lint.sh` (set `STRICT=1` to fail on warnings). CI enforces strict ShellCheck on PRs.
+  - Install ShellCheck first if needed: `brew install shellcheck` or `sudo apt-get install -y shellcheck`
 
 ## Coding Style & Naming Conventions
 - Language: Bash. Use 4-space indentation and double quotes.

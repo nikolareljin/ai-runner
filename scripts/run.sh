@@ -152,9 +152,7 @@ if $run_install; then
 fi
 
 if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install; then
-    if choose_start_action; then
-        :
-    else
+    if ! choose_start_action; then
         status=$?
         if [[ $status -eq 2 ]]; then
             print_info "Run cancelled."
@@ -187,9 +185,34 @@ if [[ -n "$model" ]]; then
     current_model="$model"
 fi
 
-selected_model="$(ollama_dialog_select_model "$json_file" "$current_model")"
 current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
-selected_size="$(ollama_dialog_select_size "$json_file" "$selected_model" "$current_size")"
+selected_model="$current_model"
+selected_size="$current_size"
+if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install; then
+    show_model_catalog_loading_indicator "Preparing selection dialog..."
+    require_model_menu_cache_file "$json_file" >/dev/null || exit "$?"
+    while true; do
+        if ! selected_model="$(ollama_dialog_select_model "$json_file" "$current_model")"; then
+            status=$?
+            if [[ $status -eq 2 ]]; then
+                print_info "Model selection cancelled."
+                exit 0
+            fi
+            print_error "Failed to select model."
+            exit "$status"
+        fi
+        if selected_size="$(ollama_dialog_select_size "$json_file" "$selected_model" "$current_size")"; then
+            break
+        fi
+        status=$?
+        if [[ $status -eq 2 ]]; then
+            current_model="$selected_model"
+            continue
+        fi
+        print_error "Failed to select model size."
+        exit "$status"
+    done
+fi
 
 ollama_update_env "$ENV_FILE" model "$selected_model"
 ollama_update_env "$ENV_FILE" size "$selected_size"

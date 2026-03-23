@@ -101,40 +101,36 @@ PY
     return 0
 }
 
-get_select_model_any() {
+get_select_model_via_dialog() {
     local json_file="$1"
     local current_model="${2:-}"
     local current_size="${3:-latest}"
-    local mode model_value size_value
+    local model_value size_value status
 
-    dialog_init
-    check_if_dialog_installed
-
-    if ! mode=$(dialog --stdout --menu "Select model source" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 10 \
-        "indexed" "Choose from indexed Ollama models" \
-        "manual" "Enter any model name manually"); then
-        print_error "Model selection cancelled."
-        return 1
-    fi
-
-    if [[ "$mode" == "indexed" ]]; then
-        model_value="$(ollama_dialog_select_model "$json_file" "$current_model")" || return 1
-        size_value="$(ollama_dialog_select_size "$json_file" "$model_value" "$current_size")" || return 1
-        printf '%s\n%s\n' "$model_value" "$size_value"
-        return 0
-    fi
-
-    model_value="$(get_value "Model Name" "Enter any Ollama model name (example: deepseek-ocr)" "$current_model")" || return 1
-    model_value="$(printf '%s' "$model_value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
-    if [[ -z "$model_value" ]]; then
-        print_error "Model name cannot be empty."
-        return 1
-    fi
-
-    size_value="$(get_value "Model Size/Tag" "Enter size/tag (example: 3b). Use latest for default." "$current_size")" || return 1
-    size_value="$(printf '%s' "${size_value:-latest}" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
-    [[ -z "$size_value" ]] && size_value="latest"
-    printf '%s\n%s\n' "$model_value" "$size_value"
+    while true; do
+        if model_value="$(ollama_dialog_select_model "$json_file" "$current_model")"; then
+            :
+        else
+            status=$?
+            if [[ $status -eq 2 ]]; then
+                print_info "Model selection cancelled by user."
+                return 2
+            fi
+            print_error "Failed to select model."
+            return "$status"
+        fi
+        if size_value="$(ollama_dialog_select_size "$json_file" "$model_value" "$current_size")"; then
+            printf '%s\n%s\n' "$model_value" "$size_value"
+            return 0
+        fi
+        status=$?
+        if [[ $status -eq 2 ]]; then
+            current_model="$model_value"
+            continue
+        fi
+        print_error "Failed to select model size."
+        return "$status"
+    done
 }
 
 model=""
@@ -174,12 +170,19 @@ if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
         print_info "Model index not found. Preparing..."
         json_file="$(ollama_prepare_models_index "$MODEL_REPO_DIR")"
     fi
+    require_model_menu_cache_file "$json_file" >/dev/null || exit "$?"
 
     current_model="${model:-$(resolve_env_value "model" "" "$ENV_FILE")}"
     current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
     [[ -n "$size" ]] && current_size="$size"
-    if ! selection_output="$(get_select_model_any "$json_file" "$current_model" "$current_size")"; then
-        exit 1
+    if selection_output="$(get_select_model_via_dialog "$json_file" "$current_model" "$current_size")"; then
+        :
+    else
+        status=$?
+        if [[ $status -eq 2 ]]; then
+            exit 0
+        fi
+        exit "$status"
     fi
     mapfile -t selection_lines <<< "$selection_output"
     if [[ "${#selection_lines[@]}" -lt 2 ]]; then
@@ -275,10 +278,10 @@ if [[ -n "$model" ]]; then
         else
             if [[ "$runtime" == "docker" ]]; then
                 cache_dir="$(ollama_runtime_data_dir "$ENV_FILE")"
-                print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; model is available in ${cache_dir}."
+                print_success "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             else
                 cache_dir="$(ollama_runtime_local_models_dir "$ENV_FILE")"
-                print_success "Model pulled successfully. This Ollama build does not support 'ollama export'; model is available in ${cache_dir}."
+                print_success "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             fi
             exit 0
         fi
