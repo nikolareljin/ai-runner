@@ -80,6 +80,20 @@ if OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=1 OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SE
     exit 1
 fi
 
+ttl_seen=""
+ollama_model_menu_cache_is_fresh() {
+    ttl_seen="$2"
+    return 1
+}
+if OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS=bogus OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=1 prepare_model_menu_cache_with_indicator "$PROJECT_ROOT/ollama-get-models/code/ollama_models.json"; then
+    printf 'Expected invalid TTL to fall back and still return failure after retries.\n' >&2
+    exit 1
+fi
+if [[ "$ttl_seen" != "1800" ]]; then
+    printf 'Expected invalid TTL to be coerced to 1800, got: %s\n' "$ttl_seen" >&2
+    exit 1
+fi
+
 if OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=1 OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS=bogus require_model_menu_cache_file "$PROJECT_ROOT/ollama-get-models/code/ollama_models.json"; then
     printf 'Expected require_model_menu_cache_file to fail when cache prep fails.\n' >&2
     exit 1
@@ -103,3 +117,8 @@ cache_path="$(cat "$cache_output_file")"
 rm -f "$cache_output_file"
 assert_contains "$cache_path" "$PROJECT_ROOT/.tmp-menu-cache.json" "require_model_menu_cache_file returns cache path"
 assert_contains "$OLLAMA_MODEL_MENU_CACHE_FILE" "$PROJECT_ROOT/.tmp-menu-cache.json" "require_model_menu_cache_file exports cache path"
+
+realpath() { return 1; }
+python3() { return 1; }
+normalized_existing="$(normalize_compare_path "./models/../models")"
+assert_contains "$normalized_existing" "$models_dir" "normalize_compare_path collapses relative dot-dot path"

@@ -137,20 +137,21 @@ require_model_menu_cache_file() {
 prepare_model_menu_cache_with_indicator() {
     local json_file="$1"
     local max_attempts="${2:-$OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS}"
+    local ttl_seconds="$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"
     local cache_path=""
     local attempt=1
 
     max_attempts="$(coerce_positive_integer "$max_attempts" "5")"
+    ttl_seconds="$(coerce_positive_integer "$ttl_seconds" "1800")"
 
     cache_path="$(ollama_model_menu_cache_path "$json_file")" || return 1
-    if ollama_model_menu_cache_is_fresh "$cache_path" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
+    if ollama_model_menu_cache_is_fresh "$cache_path" "$ttl_seconds"; then
         printf '%s\n' "$cache_path"
         return 0
     fi
 
     while (( attempt <= max_attempts )); do
         local prepared_cache=""
-
         local loading_message=$'Fetching Ollama model catalog...\nBuilding model selection cache.'
 
         show_model_catalog_loading_indicator "$loading_message"
@@ -161,7 +162,7 @@ prepare_model_menu_cache_with_indicator() {
             attempt=$((attempt + 1))
             continue
         fi
-        if [[ -n "$prepared_cache" ]] && ollama_model_menu_cache_is_fresh "$prepared_cache" "$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"; then
+        if [[ -n "$prepared_cache" ]] && ollama_model_menu_cache_is_fresh "$prepared_cache" "$ttl_seconds"; then
             printf '%s\n' "$prepared_cache"
             return 0
         fi
@@ -177,6 +178,14 @@ prepare_model_menu_cache_with_indicator() {
 normalize_compare_path() {
     local raw_path="$1"
     local normalized=""
+    local abs_path=""
+    local parent_dir=""
+    local base_name=""
+    local dir_norm=""
+    local joined=""
+    local -a parts=()
+    local -a resolved=("")
+    local part=""
 
     if [[ -z "$raw_path" ]]; then
         printf '\n'
@@ -203,19 +212,51 @@ PY2
         fi
     fi
 
-    if [[ "$raw_path" == "." || "$raw_path" == "./" ]]; then
-        normalized="$PWD"
-    elif [[ "$raw_path" != /* ]]; then
-        normalized="$PWD/${raw_path#./}"
-    else
-        normalized="$raw_path"
+    if [[ -e "$raw_path" ]]; then
+        if [[ -d "$raw_path" ]]; then
+            if normalized="$(cd "$raw_path" 2>/dev/null && pwd -P)"; then
+                printf '%s\n' "$normalized"
+                return 0
+            fi
+        else
+            parent_dir="$(dirname -- "$raw_path")"
+            base_name="$(basename -- "$raw_path")"
+            if dir_norm="$(cd "$parent_dir" 2>/dev/null && pwd -P)"; then
+                printf '%s\n' "${dir_norm%/}/$base_name"
+                return 0
+            fi
+        fi
     fi
 
-    normalized="${normalized%/}"
-    [[ -z "$normalized" ]] && normalized="/"
+    if [[ "$raw_path" == /* ]]; then
+        abs_path="$raw_path"
+    else
+        abs_path="$PWD/${raw_path#./}"
+    fi
+
+    IFS='/' read -r -a parts <<< "$abs_path"
+    for part in "${parts[@]}"; do
+        if [[ -z "$part" || "$part" == "." ]]; then
+            continue
+        fi
+        if [[ "$part" == ".." ]]; then
+            if (( ${#resolved[@]} > 1 )); then
+                unset 'resolved[${#resolved[@]}-1]'
+            fi
+            continue
+        fi
+        resolved+=("$part")
+    done
+
+    if (( ${#resolved[@]} == 1 )); then
+        normalized="/"
+    else
+        joined="${resolved[*]:1}"
+        normalized="/${joined// /\/}"
+    fi
+
     printf '%s\n' "$normalized"
 }
-
 paths_match_for_message() {
     local left="$1"
     local right="$2"
