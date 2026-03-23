@@ -38,6 +38,14 @@ while getopts ":h" opt; do
     esac
 done
 
+shift "$((OPTIND - 1))"
+
+if [ "$#" -ne 0 ]; then
+    printf 'Unexpected positional arguments: %s\n\n' "$*" >&2
+    help >&2
+    exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 

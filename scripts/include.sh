@@ -144,6 +144,7 @@ prepare_model_menu_cache_with_indicator() {
     local ttl_seconds="$OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS"
     local cache_path=""
     local attempt=1
+    local last_status=1
 
     max_attempts="$(coerce_positive_integer "$max_attempts" "5")"
     ttl_seconds="$(coerce_positive_integer "$ttl_seconds" "1800")"
@@ -159,7 +160,10 @@ prepare_model_menu_cache_with_indicator() {
         local loading_message=$'Fetching Ollama model catalog...\nBuilding model selection cache.'
 
         show_model_catalog_loading_indicator "$loading_message"
-        if ! prepared_cache="$(ollama_prepare_model_menu_cache "$json_file" "$cache_path")"; then
+        if prepared_cache="$(ollama_prepare_model_menu_cache "$json_file" "$cache_path")"; then
+            :
+        else
+            last_status=$?
             if (( attempt < max_attempts )); then
                 sleep_for_cache_retry_delay "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
             fi
@@ -170,13 +174,14 @@ prepare_model_menu_cache_with_indicator() {
             printf '%s\n' "$prepared_cache"
             return 0
         fi
+        last_status=1
         if (( attempt < max_attempts )); then
             sleep_for_cache_retry_delay "$OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS"
         fi
         attempt=$((attempt + 1))
     done
 
-    return 1
+    return "$last_status"
 }
 
 normalize_compare_path() {
