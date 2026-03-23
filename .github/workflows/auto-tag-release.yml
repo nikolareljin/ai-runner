@@ -20,26 +20,23 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Detect default branch
-        id: default-branch
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const payloadDefault = context.payload?.repository?.default_branch || '';
-            core.setOutput('branch', payloadDefault || 'main');
-
       - name: Determine release version
         id: release-version
         uses: actions/github-script@v7
-        env:
-          DEFAULT_BRANCH: ${{ steps.default-branch.outputs.branch }}
         with:
           script: |
             const sha = context.sha;
+            const refName = context.ref.replace('refs/heads/', '');
             const { owner, repo } = context.repo;
-            const defaultBranch = process.env.DEFAULT_BRANCH || 'main';
+            const defaultBranch = context.payload?.repository?.default_branch || 'main';
             const releaseHeadPattern = /^release\/v?(\d+\.\d+\.\d+(?:-rc\.?\d+)?)$/;
-            const mergeMessagePattern = /^Merge pull request #\d+ from .+\/release\/v?(\d+\.\d+\.\d+(?:-rc\.?\d+)?)$/m;
+            const mergeMessagePattern = /^Merge pull request #\d+ from (?:.+\/)?release\/v?(\d+\.\d+\.\d+(?:-rc\.?\d+)?)$/m;
+
+            if (refName !== defaultBranch) {
+              core.info(`Push landed on ${refName}; default branch is ${defaultBranch}. Skipping.`);
+              core.setOutput('version', '');
+              return;
+            }
 
             let version = '';
             const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({
@@ -48,7 +45,10 @@ jobs:
               commit_sha: sha,
             });
             const merged = prs.data.find(
-              (pr) => pr.merged_at && pr.base.ref === defaultBranch
+              (pr) =>
+                pr.merged_at &&
+                pr.base.ref === defaultBranch &&
+                pr.merge_commit_sha === sha
             );
             if (merged) {
               const match = String(merged.head.ref || '').match(releaseHeadPattern);
