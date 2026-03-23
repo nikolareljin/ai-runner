@@ -108,7 +108,9 @@ get_select_model_via_dialog() {
     local model_value size_value status
 
     while true; do
-        if ! model_value="$(ollama_dialog_select_model "$json_file" "$current_model")"; then
+        if model_value="$(ollama_dialog_select_model "$json_file" "$current_model")"; then
+            :
+        else
             status=$?
             if [[ $status -eq 2 ]]; then
                 print_info "Model selection cancelled by user."
@@ -173,7 +175,9 @@ if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
     current_model="${model:-$(resolve_env_value "model" "" "$ENV_FILE")}"
     current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
     [[ -n "$size" ]] && current_size="$size"
-    if ! selection_output="$(get_select_model_via_dialog "$json_file" "$current_model" "$current_size")"; then
+    if selection_output="$(get_select_model_via_dialog "$json_file" "$current_model" "$current_size")"; then
+        :
+    else
         status=$?
         if [[ $status -eq 2 ]]; then
             exit 0
