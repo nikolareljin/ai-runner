@@ -66,8 +66,11 @@ assert_contains "$local_diff" "no archive was written to ./models/custom." "loca
 assert_contains "$local_diff" "local Ollama model store at ${models_dir}." "local_diff: local Ollama model store path"
 
 ollama_model_menu_cache_path() { printf '%s\n' "$PROJECT_ROOT/.tmp-menu-cache.json"; }
+# shellcheck disable=SC2317
 ollama_model_menu_cache_is_fresh() { return 1; }
+# shellcheck disable=SC2317
 ollama_prepare_model_menu_cache() { return 1; }
+# shellcheck disable=SC2317
 show_model_catalog_loading_indicator() { :; }
 
 if OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=bogus OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS=0 prepare_model_menu_cache_with_indicator "$PROJECT_ROOT/ollama-get-models/code/ollama_models.json"; then
@@ -81,6 +84,7 @@ if OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=1 OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SE
 fi
 
 ttl_seen=""
+# shellcheck disable=SC2317
 ollama_model_menu_cache_is_fresh() {
     ttl_seen="$2"
     return 1
@@ -100,6 +104,7 @@ if OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=1 OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SE
 fi
 
 sleep_calls=0
+# shellcheck disable=SC2317
 sleep_for_cache_retry_delay() { sleep_calls=$((sleep_calls + 1)); }
 OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS=1 OLLAMA_MODEL_MENU_CACHE_RETRY_DELAY_SECONDS=0 prepare_model_menu_cache_with_indicator "$PROJECT_ROOT/ollama-get-models/code/ollama_models.json" >/dev/null 2>&1 || true
 if [[ $sleep_calls -ne 0 ]]; then
@@ -107,8 +112,11 @@ if [[ $sleep_calls -ne 0 ]]; then
     exit 1
 fi
 
+# shellcheck disable=SC2317
 ollama_prepare_model_menu_cache() { printf '%s\n' "$PROJECT_ROOT/.tmp-menu-cache.json"; }
+# shellcheck disable=SC2317
 ollama_model_menu_cache_is_fresh() { [[ "$1" == "$PROJECT_ROOT/.tmp-menu-cache.json" ]]; }
+# shellcheck disable=SC2317
 sleep_for_cache_retry_delay() { :; }
 cache_output_file="$PROJECT_ROOT/.tmp-cache-output.txt"
 rm -f "$cache_output_file"

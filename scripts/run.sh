@@ -153,7 +153,7 @@ fi
 
 if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install; then
     if choose_start_action; then
-        show_model_catalog_loading_indicator
+        show_model_catalog_loading_indicator "Preparing selection dialog..."
     else
         status=$?
         if [[ $status -eq 2 ]]; then

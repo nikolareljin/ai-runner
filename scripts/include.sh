@@ -182,7 +182,6 @@ normalize_compare_path() {
     local parent_dir=""
     local base_name=""
     local dir_norm=""
-    local joined=""
     local -a parts=()
     local -a resolved=("")
     local part=""
@@ -251,8 +250,8 @@ PY2
     if (( ${#resolved[@]} == 1 )); then
         normalized="/"
     else
-        joined="${resolved[*]:1}"
-        normalized="/${joined// /\/}"
+        local IFS='/'
+        normalized="/${resolved[*]:1}"
     fi
 
     printf '%s\n' "$normalized"
