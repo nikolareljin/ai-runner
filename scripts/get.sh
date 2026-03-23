@@ -112,7 +112,7 @@ get_select_model_via_dialog() {
             status=$?
             if [[ $status -eq 2 ]]; then
                 print_info "Model selection cancelled by user."
-                return 1
+                return 2
             fi
             return "$status"
         fi
@@ -166,17 +166,16 @@ if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
         print_info "Model index not found. Preparing..."
         json_file="$(ollama_prepare_models_index "$MODEL_REPO_DIR")"
     fi
-    if require_model_menu_cache_file "$json_file" >/dev/null; then
-        :
-    else
-        status=$?
-        exit "$status"
-    fi
+    require_model_menu_cache_file "$json_file" >/dev/null || exit "$?"
 
     current_model="${model:-$(resolve_env_value "model" "" "$ENV_FILE")}"
     current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
     [[ -n "$size" ]] && current_size="$size"
     if ! selection_output="$(get_select_model_via_dialog "$json_file" "$current_model" "$current_size")"; then
+        status=$?
+        if [[ $status -eq 2 ]]; then
+            exit 0
+        fi
         exit 1
     fi
     mapfile -t selection_lines <<< "$selection_output"

@@ -181,12 +181,7 @@ if [[ ! -f "$json_file" ]]; then
     print_info "Model index not found. Preparing..."
     json_file="$(ollama_prepare_models_index "$MODEL_REPO_DIR")"
 fi
-if require_model_menu_cache_file "$json_file" >/dev/null; then
-    :
-else
-    status=$?
-    exit "$status"
-fi
+require_model_menu_cache_file "$json_file" >/dev/null || exit "$?"
 
 current_model="$(resolve_env_value "model" "$DEFAULT_MODEL" "$ENV_FILE")"
 if [[ -n "$model" ]]; then
