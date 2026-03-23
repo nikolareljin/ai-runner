@@ -176,7 +176,7 @@ if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
         if [[ $status -eq 2 ]]; then
             exit 0
         fi
-        exit 1
+        exit "$status"
     fi
     mapfile -t selection_lines <<< "$selection_output"
     if [[ "${#selection_lines[@]}" -lt 2 ]]; then

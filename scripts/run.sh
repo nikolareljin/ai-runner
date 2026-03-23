@@ -152,9 +152,7 @@ if $run_install; then
 fi
 
 if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install; then
-    if choose_start_action; then
-        show_model_catalog_loading_indicator "Preparing selection dialog..."
-    else
+    if ! choose_start_action; then
         status=$?
         if [[ $status -eq 2 ]]; then
             print_info "Run cancelled."
@@ -180,6 +178,9 @@ json_file="$(ollama_models_json_path "$MODEL_REPO_DIR")"
 if [[ ! -f "$json_file" ]]; then
     print_info "Model index not found. Preparing..."
     json_file="$(ollama_prepare_models_index "$MODEL_REPO_DIR")"
+fi
+if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install; then
+    show_model_catalog_loading_indicator "Preparing selection dialog..."
 fi
 require_model_menu_cache_file "$json_file" >/dev/null || exit "$?"
 
