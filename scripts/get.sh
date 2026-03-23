@@ -101,7 +101,7 @@ PY
     return 0
 }
 
-get_select_model_any() {
+get_select_model_via_dialog() {
     local json_file="$1"
     local current_model="${2:-}"
     local current_size="${3:-latest}"
@@ -110,6 +110,10 @@ get_select_model_any() {
     while true; do
         if ! model_value="$(ollama_dialog_select_model "$json_file" "$current_model")"; then
             status=$?
+            if [[ $status -eq 2 ]]; then
+                print_info "Model selection cancelled by user."
+                return 1
+            fi
             return "$status"
         fi
         if size_value="$(ollama_dialog_select_size "$json_file" "$model_value" "$current_size")"; then
@@ -172,7 +176,7 @@ if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
     current_model="${model:-$(resolve_env_value "model" "" "$ENV_FILE")}"
     current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
     [[ -n "$size" ]] && current_size="$size"
-    if ! selection_output="$(get_select_model_any "$json_file" "$current_model" "$current_size")"; then
+    if ! selection_output="$(get_select_model_via_dialog "$json_file" "$current_model" "$current_size")"; then
         exit 1
     fi
     mapfile -t selection_lines <<< "$selection_output"

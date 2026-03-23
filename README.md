@@ -148,7 +148,7 @@ Notes:
 - In Docker mode, pulled models are stored in `ollama_data_dir` (mounted into the container at `/root/.ollama`) so they are reusable across runs.
 - Optional: you can track a local path in `.env` via `model_path=./models/<name>` for your own workflows (not required by `./run`).
 
-# Lint and tests
+## Lint and tests
 
 Run the shell linter and smoke tests with:
 

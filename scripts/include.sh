@@ -117,12 +117,16 @@ require_model_menu_cache_file() {
     local json_file="$1"
     local cache_file=""
     local status=0
+    local effective_max_attempts=""
+    local effective_ttl_seconds=""
 
     if cache_file="$(prepare_model_menu_cache_with_indicator "$json_file")"; then
         :
     else
         status=$?
-        print_error "Failed to prepare model menu cache."
+        effective_max_attempts="$(coerce_positive_integer "${OLLAMA_MODEL_MENU_CACHE_MAX_ATTEMPTS:-}" "5")"
+        effective_ttl_seconds="$(coerce_positive_integer "${OLLAMA_MODEL_MENU_CACHE_TTL_SECONDS:-}" "1800")"
+        print_error "Failed to prepare model menu cache for JSON file: $json_file (attempts: $effective_max_attempts, TTL seconds: $effective_ttl_seconds)."
         return "$status"
     fi
     if [[ -z "$cache_file" ]]; then
