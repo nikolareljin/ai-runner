@@ -114,6 +114,7 @@ get_select_model_via_dialog() {
                 print_info "Model selection cancelled by user."
                 return 2
             fi
+            print_error "Failed to select model."
             return "$status"
         fi
         if size_value="$(ollama_dialog_select_size "$json_file" "$model_value" "$current_size")"; then
@@ -125,6 +126,7 @@ get_select_model_via_dialog() {
             current_model="$model_value"
             continue
         fi
+        print_error "Failed to select model size."
         return "$status"
     done
 }
