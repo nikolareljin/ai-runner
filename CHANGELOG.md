@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+- CI: harden auto-tagging workflow permissions by explicitly requesting `pull-requests: read` while delegating to the reusable workflow.
+
 - Fix: restore fully TUI-based model selection in `./run` and `./get` with no free-form model-name entry.
 - Fix: default interactive model browsing to official un-namespaced Ollama library models, sorted alphabetically, to avoid community duplicates in the main selector.
 - Fix: keep interactive selection loops in `./run` and `./get` so cancelling the size dialog returns to model selection instead of silently reusing a prior size.
