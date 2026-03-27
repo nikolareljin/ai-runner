@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
-- CI: make auto-tagging fall back to merged release branch names from merge commit messages when GitHub does not immediately associate the merge commit with its PR.
+- CI: harden auto-tagging workflow permissions by explicitly requesting `pull-requests: read` while delegating to the reusable workflow.
 
 - Fix: restore fully TUI-based model selection in `./run` and `./get` with no free-form model-name entry.
 - Fix: default interactive model browsing to official un-namespaced Ollama library models, sorted alphabetically, to avoid community duplicates in the main selector.
