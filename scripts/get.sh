@@ -60,6 +60,88 @@ sanitize_filename_component() {
     printf "%s\n" "$value"
 }
 
+ollama_registry_repo() {
+    local model_name="$1"
+
+    if [[ "$model_name" == */* ]]; then
+        printf '%s\n' "$model_name"
+    else
+        printf 'library/%s\n' "$model_name"
+    fi
+}
+
+ollama_registry_manifest_url() {
+    local model_name="$1"
+    local tag="${2:-latest}"
+    local repo
+
+    repo="$(ollama_registry_repo "$model_name")"
+    printf 'https://registry.ollama.ai/v2/%s/manifests/%s\n' "$repo" "$tag"
+}
+
+ollama_registry_blob_url() {
+    local model_name="$1"
+    local digest="$2"
+    local repo
+
+    repo="$(ollama_registry_repo "$model_name")"
+    printf 'https://registry.ollama.ai/v2/%s/blobs/%s\n' "$repo" "$digest"
+}
+
+download_ollama_registry_bundle() {
+    local model_name="$1"
+    local tag="$2"
+    local destination_dir="$3"
+    local manifest_url manifest_tmp manifest_file metadata_file blobs_dir
+    local component_count=0
+
+    manifest_url="$(ollama_registry_manifest_url "$model_name" "$tag")"
+    manifest_tmp="$(mktemp "/tmp/ollama-manifest.XXXXXX.json")"
+    manifest_file="${destination_dir}/manifest.json"
+    metadata_file="${destination_dir}/bundle-metadata.json"
+    blobs_dir="${destination_dir}/blobs"
+
+    print_info "Downloading Ollama registry manifest for ${model_name}:${tag}"
+    if ! DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$manifest_url" "$manifest_tmp"; then
+        rm -f "$manifest_tmp"
+        return 1
+    fi
+
+    if ! jq -e '.schemaVersion and .config and .layers' "$manifest_tmp" >/dev/null 2>&1; then
+        print_error "Registry manifest response was invalid for ${model_name}:${tag}"
+        rm -f "$manifest_tmp"
+        return 1
+    fi
+
+    create_directory "$destination_dir" >/dev/null
+    create_directory "$blobs_dir" >/dev/null
+    mv "$manifest_tmp" "$manifest_file"
+
+    jq -n \
+        --arg model "$model_name" \
+        --arg tag "$tag" \
+        --arg manifest_url "$manifest_url" \
+        --arg downloaded_at "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+        '{model:$model, tag:$tag, manifest_url:$manifest_url, downloaded_at:$downloaded_at, format:"ollama-registry-bundle"}' \
+        > "$metadata_file"
+
+    while IFS=$'\t' read -r digest media_type size; do
+        [[ -n "$digest" ]] || continue
+        component_count=$((component_count + 1))
+        safe_digest="${digest/:/-}"
+        blob_output="${blobs_dir}/${safe_digest}"
+        blob_url="$(ollama_registry_blob_url "$model_name" "$digest")"
+        print_info "Downloading registry blob ${component_count}: ${digest} (${media_type}, ${size} bytes)"
+        if ! DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$blob_url" "$blob_output"; then
+            print_error "Failed to download registry blob: ${digest}"
+            return 1
+        fi
+    done < <(jq -r '[.config] + (.layers // []) | .[] | [.digest, .mediaType, (.size|tostring)] | @tsv' "$manifest_file")
+
+    print_success "Downloaded Ollama registry bundle for ${model_name}:${tag} to ${destination_dir}"
+    return 0
+}
+
 validate_tar_archive_safety() {
     local archive_path="$1"
     if ! command -v python3 >/dev/null 2>&1; then
@@ -326,7 +408,7 @@ elif [[ -z "$model" && -z "$url" ]]; then
 fi
 
 if [[ -z "$url" && -n "$model" ]]; then
-    url="https://ollama.com/models/${model}.tar.gz"
+    url="$(ollama_registry_manifest_url "$model" "${size:-latest}")"
 fi
 
 model_ref="${model:-from-url}"
@@ -372,6 +454,13 @@ print_info "Downloading model ${model_ref} from $url to $dir"
 safe_archive_label="$(sanitize_filename_component "$model_ref")"
 tmpfile="$(mktemp "/tmp/${safe_archive_label}.XXXXXX.tar.gz")"
 download_extracted=false
+if [[ -n "$model" ]]; then
+    if download_ollama_registry_bundle "$model" "${size:-latest}" "$dir"; then
+        exit 0
+    fi
+    print_warning "Registry bundle download failed for ${model_ref}; trying fallback paths."
+fi
+
 if [[ -z "$url" ]]; then
     print_info "No direct archive URL available; skipping direct download and using runtime fallback."
 elif DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
