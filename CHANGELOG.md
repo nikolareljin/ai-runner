@@ -5,7 +5,7 @@
 - Fix: make `./get` prompt for model, size, destination, and confirmation before downloading, while showing a meaningful archive label instead of a temporary filename in the progress dialog.
 - Fix: render selector dialogs through `/dev/tty` so interactive `dialog` menus remain visible when command stdout is captured or wrapped.
 - Fix: support explicit long options in `./get` (`--model`, `--url`, `--dir`, `--runtime`, `--debug`, `--verbose`) without colliding with `-d <dir>`.
-- Fix: clarify successful `./get` fallback messaging when `ollama export` is unavailable so it reads as a completed pull into the Ollama runtime store, not a failed download.
+- Fix: make `./get` fail clearly when `ollama export` is unavailable and no standalone archive can be created, instead of reporting the pull-only fallback as a successful download.
 - CI: harden auto-tagging workflow permissions by explicitly requesting `pull-requests: read` while delegating to the reusable workflow.
 
 - Fix: restore fully TUI-based model selection in `./run` and `./get` with no free-form model-name entry.

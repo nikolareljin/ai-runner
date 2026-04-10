@@ -296,16 +296,16 @@ ollama_export_unavailable_message() {
 
     if [[ "$runtime" == "docker" ]]; then
         if paths_match_for_message "$requested_dir" "$cache_dir"; then
-            printf "%s\n" "Model pull completed successfully. This Ollama build does not support 'ollama export', so the model was kept in the Docker runtime store at ${cache_dir}."
+            printf "%s\n" "Model pull completed, but this Ollama build does not support 'ollama export'. No standalone archive was created. The pulled model is only available in the Docker runtime store at ${cache_dir}."
         else
-            printf "%s\n" "Model pull completed successfully. This Ollama build does not support 'ollama export', so no standalone archive was created in ${requested_dir}. The model is ready to use from the Docker runtime store at ${cache_dir}."
+            printf "%s\n" "Model pull completed, but this Ollama build does not support 'ollama export'. No standalone archive was created in ${requested_dir}. The pulled model is only available in the Docker runtime store at ${cache_dir}."
         fi
         return 0
     fi
 
     if paths_match_for_message "$requested_dir" "$cache_dir"; then
-        printf "%s\n" "Model pull completed successfully. This Ollama build does not support 'ollama export', so the model was kept in the local Ollama runtime store at ${cache_dir}."
+        printf "%s\n" "Model pull completed, but this Ollama build does not support 'ollama export'. No standalone archive was created. The pulled model is only available through the running local Ollama server."
     else
-        printf "%s\n" "Model pull completed successfully. This Ollama build does not support 'ollama export', so no standalone archive was created in ${requested_dir}. The model is ready to use from the local Ollama runtime store at ${cache_dir}."
+        printf "%s\n" "Model pull completed, but this Ollama build does not support 'ollama export'. No standalone archive was created in ${requested_dir}. The pulled model is only available through the running local Ollama server."
     fi
 }

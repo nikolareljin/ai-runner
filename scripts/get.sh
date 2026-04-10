@@ -432,12 +432,12 @@ if [[ -n "$model" ]]; then
         else
             if [[ "$runtime" == "docker" ]]; then
                 cache_dir="$(ollama_runtime_data_dir "$ENV_FILE")"
-                print_success "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
+                print_error "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             else
                 cache_dir="$(ollama_runtime_local_models_dir "$ENV_FILE")"
-                print_success "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
+                print_error "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             fi
-            exit 0
+            exit 1
         fi
     else
         print_error "Ollama pull failed for ${model_ref} using runtime '$runtime'."
