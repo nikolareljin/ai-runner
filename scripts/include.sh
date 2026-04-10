@@ -70,15 +70,27 @@ normalize_runtime_override() {
     printf '%s' "$value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]'
 }
 
+has_interactive_dialog_session() {
+    if [[ -t 2 || -t 1 || -t 0 ]]; then
+        return 0
+    fi
+
+    if [[ -r /dev/tty && -w /dev/tty ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
 show_model_catalog_loading_indicator() {
     local default_message=$'Fetching Ollama model catalog...\nPreparing selection dialog.'
     local message="${1:-$default_message}"
-    if [[ ! -t 0 || ! -t 1 ]]; then
+    if ! has_interactive_dialog_session; then
         return 0
     fi
     dialog_init
     check_if_dialog_installed || return 0
-    dialog --title "ai-runner" --infobox "$message" 8 60
+    dialog_run --title "ai-runner" --infobox "$message" 8 60
     sleep 0.2
 }
 
@@ -284,16 +296,16 @@ ollama_export_unavailable_message() {
 
     if [[ "$runtime" == "docker" ]]; then
         if paths_match_for_message "$requested_dir" "$cache_dir"; then
-            printf "%s\n" "Model pulled successfully. This Ollama build does not support 'ollama export'; the runtime model store is ${cache_dir}."
+            printf "%s\n" "Model pull completed, but this Ollama build does not support 'ollama export'. No standalone archive was created. The pulled model is only available in the Docker runtime store at ${cache_dir}."
         else
-            printf "%s\n" "Model pulled successfully. This Ollama build does not support 'ollama export'; no archive was written to ${requested_dir}. The model is available through the Docker runtime store at ${cache_dir}."
+            printf "%s\n" "Model pull completed, but this Ollama build does not support 'ollama export'. No standalone archive was created in ${requested_dir}. The pulled model is only available in the Docker runtime store at ${cache_dir}."
         fi
         return 0
     fi
 
     if paths_match_for_message "$requested_dir" "$cache_dir"; then
-        printf "%s\n" "Model pulled successfully. This Ollama build does not support 'ollama export'; the local runtime model store is ${cache_dir}."
+        printf "%s\n" "Model pull completed, but this Ollama build does not support 'ollama export'. No standalone archive was created. The pulled model is only available through the running local Ollama server."
     else
-        printf "%s\n" "Model pulled successfully. This Ollama build does not support 'ollama export'; no archive was written to ${requested_dir}. The model is available through the local Ollama model store at ${cache_dir}."
+        printf "%s\n" "Model pull completed, but this Ollama build does not support 'ollama export'. No standalone archive was created in ${requested_dir}. The pulled model is only available through the running local Ollama server."
     fi
 }

@@ -29,7 +29,25 @@ ENV_FILE="$ROOT_DIR/.env"
 MODEL_REPO_DIR="$ROOT_DIR/ollama-get-models"
 json_file=""
 
-help() { display_help "$0"; }
+help() {
+    cat <<'EOF'
+Script Name: get.sh
+Usage: ./get.sh [-h] [-m <model>] [-u <url>] [-d <dir>] [-r <runtime>] [--debug] [--verbose]
+Description:
+  Download a model archive for offline reuse.
+Parameters:
+  -m, --model <model>     model name (default: current selection or prompt)
+  -u, --url <url>         model URL (if not in the list)
+  -d, --dir <dir>         directory to download the model to (default: ./models/<model>-<size>)
+  -r, --runtime <mode>    runtime to use for fallback pull/export (local|docker)
+  --debug                 enable debug logging
+  --verbose               enable verbose logging
+  -h, --help              show help
+Example:
+  ./get.sh -m llama3 -d ./models -r docker
+  ./get.sh --model llama3 --dir ./models --debug
+EOF
+}
 
 sanitize_filename_component() {
     local value="$1"
@@ -40,6 +58,88 @@ sanitize_filename_component() {
         value="unknown"
     fi
     printf "%s\n" "$value"
+}
+
+ollama_registry_repo() {
+    local model_name="$1"
+
+    if [[ "$model_name" == */* ]]; then
+        printf '%s\n' "$model_name"
+    else
+        printf 'library/%s\n' "$model_name"
+    fi
+}
+
+ollama_registry_manifest_url() {
+    local model_name="$1"
+    local tag="${2:-latest}"
+    local repo
+
+    repo="$(ollama_registry_repo "$model_name")"
+    printf 'https://registry.ollama.ai/v2/%s/manifests/%s\n' "$repo" "$tag"
+}
+
+ollama_registry_blob_url() {
+    local model_name="$1"
+    local digest="$2"
+    local repo
+
+    repo="$(ollama_registry_repo "$model_name")"
+    printf 'https://registry.ollama.ai/v2/%s/blobs/%s\n' "$repo" "$digest"
+}
+
+download_ollama_registry_bundle() {
+    local model_name="$1"
+    local tag="$2"
+    local destination_dir="$3"
+    local manifest_url manifest_tmp manifest_file metadata_file blobs_dir
+    local component_count=0
+
+    manifest_url="$(ollama_registry_manifest_url "$model_name" "$tag")"
+    manifest_tmp="$(mktemp "/tmp/ollama-manifest.XXXXXX.json")"
+    manifest_file="${destination_dir}/manifest.json"
+    metadata_file="${destination_dir}/bundle-metadata.json"
+    blobs_dir="${destination_dir}/blobs"
+
+    print_info "Downloading Ollama registry manifest for ${model_name}:${tag}"
+    if ! DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$manifest_url" "$manifest_tmp"; then
+        rm -f "$manifest_tmp"
+        return 1
+    fi
+
+    if ! jq -e '.schemaVersion and .config and .layers' "$manifest_tmp" >/dev/null 2>&1; then
+        print_error "Registry manifest response was invalid for ${model_name}:${tag}"
+        rm -f "$manifest_tmp"
+        return 1
+    fi
+
+    create_directory "$destination_dir" >/dev/null
+    create_directory "$blobs_dir" >/dev/null
+    mv "$manifest_tmp" "$manifest_file"
+
+    jq -n \
+        --arg model "$model_name" \
+        --arg tag "$tag" \
+        --arg manifest_url "$manifest_url" \
+        --arg downloaded_at "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+        '{model:$model, tag:$tag, manifest_url:$manifest_url, downloaded_at:$downloaded_at, format:"ollama-registry-bundle"}' \
+        > "$metadata_file"
+
+    while IFS=$'\t' read -r digest media_type size; do
+        [[ -n "$digest" ]] || continue
+        component_count=$((component_count + 1))
+        safe_digest="${digest/:/-}"
+        blob_output="${blobs_dir}/${safe_digest}"
+        blob_url="$(ollama_registry_blob_url "$model_name" "$digest")"
+        print_info "Downloading registry blob ${component_count}: ${digest} (${media_type}, ${size} bytes)"
+        if ! DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$blob_url" "$blob_output"; then
+            print_error "Failed to download registry blob: ${digest}"
+            return 1
+        fi
+    done < <(jq -r '[.config] + (.layers // []) | .[] | [.digest, .mediaType, (.size|tostring)] | @tsv' "$manifest_file")
+
+    print_success "Downloaded Ollama registry bundle for ${model_name}:${tag} to ${destination_dir}"
+    return 0
 }
 
 validate_tar_archive_safety() {
@@ -133,21 +233,125 @@ get_select_model_via_dialog() {
     done
 }
 
-model=""
-size=""
-url=""
-dir=""
-runtime_override=""
+prompt_download_directory_via_dialog() {
+    local default_dir="$1"
+    local model_ref="$2"
+    local selected_dir=""
+    local status=0
 
-while getopts ":hm:u:d:r:" opt; do
-    case ${opt} in
-        h) help; exit 0 ;;
-        m) model="$OPTARG" ;;
-        u) url="$OPTARG" ;;
-        d) dir="$OPTARG" ;;
-        r) runtime_override="$OPTARG" ;;
-        :) print_error "Option -$OPTARG requires an argument"; exit 1 ;;
-        \?) print_error "Invalid option: -$OPTARG"; help; exit 1 ;;
+    dialog_init
+    check_if_dialog_installed || return 1
+
+    if selected_dir="$(dialog_capture \
+        --title "Download directory" \
+        --inputbox "Choose where to download ${model_ref}.\nEdit the default path if needed before starting the download." \
+        "$DIALOG_HEIGHT" "$DIALOG_WIDTH" "$default_dir")"; then
+        if [[ -z "$selected_dir" ]]; then
+            print_error "Download directory cannot be empty."
+            return 1
+        fi
+        printf '%s\n' "$selected_dir"
+        return 0
+    fi
+
+    status=$?
+    if [[ $status -eq 1 || $status -eq 255 ]]; then
+        print_info "Download cancelled by user."
+        return 2
+    fi
+
+    print_error "Failed to read download directory."
+    return "$status"
+}
+
+confirm_download_via_dialog() {
+    local model_ref="$1"
+    local source_url="$2"
+    local destination_dir="$3"
+    local status=0
+
+    dialog_init
+    check_if_dialog_installed || return 1
+
+    if [[ -z "$source_url" ]]; then
+        source_url="runtime fallback only"
+    fi
+
+    if dialog_run --title "Confirm download" --yesno \
+"Model: ${model_ref}
+Source: ${source_url}
+Destination: ${destination_dir}
+
+Start download now?" \
+        "$DIALOG_HEIGHT" "$DIALOG_WIDTH"; then
+        return 0
+    fi
+
+    status=$?
+    if [[ $status -eq 1 || $status -eq 255 ]]; then
+        print_info "Download cancelled by user."
+        return 2
+    fi
+
+    print_error "Failed to confirm download."
+    return "$status"
+}
+
+model_arg=""
+size_arg=""
+url_arg=""
+dir_arg=""
+runtime_override=""
+interactive_selection=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)
+            help
+            exit 0
+            ;;
+        --debug)
+            export DEBUG=true
+            shift
+            ;;
+        --verbose)
+            export VERBOSE=true
+            shift
+            ;;
+        -m|--model)
+            [[ $# -ge 2 ]] || { print_error "Option $1 requires an argument"; exit 1; }
+            model_arg="$2"
+            shift 2
+            ;;
+        -u|--url)
+            [[ $# -ge 2 ]] || { print_error "Option $1 requires an argument"; exit 1; }
+            url_arg="$2"
+            shift 2
+            ;;
+        -d|--dir)
+            [[ $# -ge 2 ]] || { print_error "Option $1 requires an argument"; exit 1; }
+            dir_arg="$2"
+            shift 2
+            ;;
+        -r|--runtime)
+            [[ $# -ge 2 ]] || { print_error "Option $1 requires an argument"; exit 1; }
+            runtime_override="$2"
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        -*)
+            print_error "Invalid option: $1"
+            help
+            exit 1
+            ;;
+        *)
+            print_error "Unexpected positional argument: $1"
+            help
+            exit 1
+            ;;
     esac
 done
 
@@ -159,12 +363,18 @@ if [[ -f "$ENV_FILE" ]]; then
 fi
 runtime="$(ollama_runtime_type "$ENV_FILE" "$runtime_override")"
 
+model="$model_arg"
+size="$size_arg"
+url="$url_arg"
+dir="$dir_arg"
+
 if [[ -n "$model" && "$model" == *:* && -z "$size" ]]; then
     size="${model#*:}"
     model="${model%%:*}"
 fi
 
-if [[ -t 0 && -t 1 && -z "$model" && -z "$url" ]]; then
+if [[ -z "$model" && -z "$url" ]]; then
+    interactive_selection=true
     json_file="$(ollama_models_json_path "$MODEL_REPO_DIR")"
     if [[ ! -f "$json_file" ]]; then
         print_info "Model index not found. Preparing..."
@@ -198,7 +408,12 @@ elif [[ -z "$model" && -z "$url" ]]; then
 fi
 
 if [[ -z "$url" && -n "$model" ]]; then
-    url="https://ollama.com/models/${model}.tar.gz"
+    url="$(ollama_registry_manifest_url "$model" "${size:-latest}")"
+fi
+
+model_ref="${model:-from-url}"
+if [[ -n "$model" ]]; then
+    model_ref="$(ollama_model_ref "$model" "${size:-latest}")"
 fi
 
 if [[ -z "$dir" ]]; then
@@ -212,12 +427,40 @@ if [[ -z "$dir" ]]; then
     fi
 fi
 
+if $interactive_selection; then
+    if dir_selection="$(prompt_download_directory_via_dialog "$dir" "$model_ref")"; then
+        dir="$dir_selection"
+    else
+        status=$?
+        if [[ $status -eq 2 ]]; then
+            exit 0
+        fi
+        exit "$status"
+    fi
+
+    if ! confirm_download_via_dialog "$model_ref" "$url" "$dir"; then
+        status=$?
+        if [[ $status -eq 2 ]]; then
+            exit 0
+        fi
+        exit "$status"
+    fi
+fi
+
 create_directory "$dir" >/dev/null
 
-print_info "Downloading model ${model:-from-url} from $url to $dir"
+print_info "Downloading model ${model_ref} from $url to $dir"
 
-tmpfile=$(mktemp)
+safe_archive_label="$(sanitize_filename_component "$model_ref")"
+tmpfile="$(mktemp "/tmp/${safe_archive_label}.XXXXXX.tar.gz")"
 download_extracted=false
+if [[ -n "$model" ]]; then
+    if download_ollama_registry_bundle "$model" "${size:-latest}" "$dir"; then
+        exit 0
+    fi
+    print_warning "Registry bundle download failed for ${model_ref}; trying fallback paths."
+fi
+
 if [[ -z "$url" ]]; then
     print_info "No direct archive URL available; skipping direct download and using runtime fallback."
 elif DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$url" "$tmpfile"; then
@@ -278,12 +521,12 @@ if [[ -n "$model" ]]; then
         else
             if [[ "$runtime" == "docker" ]]; then
                 cache_dir="$(ollama_runtime_data_dir "$ENV_FILE")"
-                print_success "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
+                print_error "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             else
                 cache_dir="$(ollama_runtime_local_models_dir "$ENV_FILE")"
-                print_success "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
+                print_error "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             fi
-            exit 0
+            exit 1
         fi
     else
         print_error "Ollama pull failed for ${model_ref} using runtime '$runtime'."
