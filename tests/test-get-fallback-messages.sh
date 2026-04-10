@@ -66,12 +66,12 @@ docker_diff="$(ollama_export_unavailable_message docker "./models/custom" "$mode
 local_same="$(ollama_export_unavailable_message local "./models/" "$models_dir")"
 local_diff="$(ollama_export_unavailable_message local "./models/custom" "$models_dir")"
 
-assert_contains "$docker_same" "the runtime model store is ${models_dir}." "docker_same: runtime model store path"
-assert_contains "$docker_diff" "no archive was written to ./models/custom." "docker_diff: no archive written message"
+assert_contains "$docker_same" "kept in the Docker runtime store at ${models_dir}." "docker_same: runtime model store path"
+assert_contains "$docker_diff" "no standalone archive was created in ./models/custom." "docker_diff: no archive written message"
 assert_contains "$docker_diff" "Docker runtime store at ${models_dir}." "docker_diff: Docker runtime store path"
-assert_contains "$local_same" "the local runtime model store is ${models_dir}." "local_same: local runtime model store path"
-assert_contains "$local_diff" "no archive was written to ./models/custom." "local_diff: no archive written message"
-assert_contains "$local_diff" "local Ollama model store at ${models_dir}." "local_diff: local Ollama model store path"
+assert_contains "$local_same" "kept in the local Ollama runtime store at ${models_dir}." "local_same: local runtime model store path"
+assert_contains "$local_diff" "no standalone archive was created in ./models/custom." "local_diff: no archive written message"
+assert_contains "$local_diff" "local Ollama runtime store at ${models_dir}." "local_diff: local Ollama model store path"
 
 if command -v script >/dev/null 2>&1; then
     tty_probe_output="$(script -q -c "bash -lc 'source \"$PROJECT_ROOT/scripts/include.sh\"; if has_interactive_dialog_session; then printf yes >&2; else printf no >&2; fi'" /dev/null 2>/dev/null | tr -d '\r\n')"
