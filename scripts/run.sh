@@ -45,7 +45,7 @@ help() { display_help "$0"; }
 show_about_dialog() {
     dialog_init
     check_if_dialog_installed
-    dialog --title "About ai-runner" --msgbox \
+    dialog_run --title "About ai-runner" --msgbox \
 "ai-runner helps you select, run, and prompt local Ollama models from a dialog-based CLI.
 
 Projects
@@ -66,7 +66,7 @@ choose_start_action() {
     while true; do
         dialog_init
         check_if_dialog_installed
-        if choice=$(dialog --stdout --title "ai-runner" --menu "Choose an action" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 10 \
+        if choice=$(dialog_capture --title "ai-runner" --menu "Choose an action" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 10 \
             "run" "Select a model and send a prompt" \
             "about" "About" \
             "quit" "Exit"); then
@@ -123,14 +123,16 @@ copy_to_clipboard_safe() {
 run_install=false
 model=""
 prompt=""
+model_arg=""
+prompt_arg=""
 runtime_override=""
 
 while getopts ":him:p:r:" opt; do
     case ${opt} in
         h) help; exit 0 ;;
         i) run_install=true ;;
-        m) model="$OPTARG" ;;
-        p) prompt="$OPTARG" ;;
+        m) model_arg="$OPTARG" ;;
+        p) prompt_arg="$OPTARG" ;;
         r) runtime_override="$OPTARG" ;;
         :) print_error "Option -$OPTARG requires an argument"; exit 1 ;;
         \?) print_error "Invalid option: -$OPTARG"; help; exit 1 ;;
@@ -151,7 +153,7 @@ if $run_install; then
     fi
 fi
 
-if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install; then
+if [[ -z "$model" && -z "$prompt" ]] && ! $run_install; then
     if ! choose_start_action; then
         status=$?
         if [[ $status -eq 2 ]]; then
@@ -174,6 +176,9 @@ ollama_update_env "$ENV_FILE" ollama_runtime "$runtime"
 ollama_runtime_sync_env_url "$ENV_FILE" >/dev/null
 generate_endpoint="$(ollama_runtime_generate_endpoint "$ENV_FILE")"
 
+model="$model_arg"
+prompt="$prompt_arg"
+
 json_file="$(ollama_models_json_path "$MODEL_REPO_DIR")"
 if [[ ! -f "$json_file" ]]; then
     print_info "Model index not found. Preparing..."
@@ -188,7 +193,7 @@ fi
 current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
 selected_model="$current_model"
 selected_size="$current_size"
-if [[ -t 0 && -t 1 && -z "$model" && -z "$prompt" ]] && ! $run_install; then
+if [[ -z "$model" && -z "$prompt" ]] && ! $run_install; then
     show_model_catalog_loading_indicator "Preparing selection dialog..."
     require_model_menu_cache_file "$json_file" >/dev/null || exit "$?"
     while true; do
@@ -223,7 +228,21 @@ if [[ -z "$prompt" ]]; then
     tmpin=$(mktemp)
     tmpout=$(mktemp)
     : > "$tmpin"
-    if ! dialog --title "Enter a prompt" --editbox "$tmpin" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 2> "$tmpout"; then
+    prompt_dialog_status=0
+    if dialog_has_tty; then
+        if dialog --title "Enter a prompt" --editbox "$tmpin" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" </dev/tty >/dev/tty 2> "$tmpout"; then
+            :
+        else
+            prompt_dialog_status=$?
+        fi
+    else
+        if dialog --title "Enter a prompt" --editbox "$tmpin" "$DIALOG_HEIGHT" "$DIALOG_WIDTH" 2> "$tmpout"; then
+            :
+        else
+            prompt_dialog_status=$?
+        fi
+    fi
+    if [[ $prompt_dialog_status -ne 0 ]]; then
         rm -f "$tmpin" "$tmpout"
         print_error "Prompt entry cancelled."
         exit 1
@@ -279,7 +298,7 @@ copy_to_clipboard_safe "$response" || true
 dialog_init
 check_if_dialog_installed
 
-dialog --title "Response" --msgbox "$response" "$DIALOG_HEIGHT" "$DIALOG_WIDTH"
+dialog_run --title "Response" --msgbox "$response" "$DIALOG_HEIGHT" "$DIALOG_WIDTH"
 
 formatted_md_response=$(format_md_response "$response")
 {

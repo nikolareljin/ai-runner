@@ -73,6 +73,14 @@ assert_contains "$local_same" "the local runtime model store is ${models_dir}." 
 assert_contains "$local_diff" "no archive was written to ./models/custom." "local_diff: no archive written message"
 assert_contains "$local_diff" "local Ollama model store at ${models_dir}." "local_diff: local Ollama model store path"
 
+if command -v script >/dev/null 2>&1; then
+    tty_probe_output="$(script -q -c "bash -lc 'source \"$PROJECT_ROOT/scripts/include.sh\"; if has_interactive_dialog_session; then printf yes >&2; else printf no >&2; fi'" /dev/null 2>/dev/null | tr -d '\r\n')"
+    if [[ "$tty_probe_output" != "yes" ]]; then
+        printf 'Expected interactive dialog session helper to allow any attached terminal fd or /dev/tty. Got: %s\n' "$tty_probe_output" >&2
+        exit 1
+    fi
+fi
+
 ollama_model_menu_cache_path() { printf '%s\n' "$PROJECT_ROOT/.tmp-menu-cache.json"; }
 # shellcheck disable=SC2317
 ollama_model_menu_cache_is_fresh() { return 1; }

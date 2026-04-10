@@ -70,15 +70,27 @@ normalize_runtime_override() {
     printf '%s' "$value" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]'
 }
 
+has_interactive_dialog_session() {
+    if [[ -t 2 || -t 1 || -t 0 ]]; then
+        return 0
+    fi
+
+    if [[ -r /dev/tty && -w /dev/tty ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
 show_model_catalog_loading_indicator() {
     local default_message=$'Fetching Ollama model catalog...\nPreparing selection dialog.'
     local message="${1:-$default_message}"
-    if [[ ! -t 0 || ! -t 1 ]]; then
+    if ! has_interactive_dialog_session; then
         return 0
     fi
     dialog_init
     check_if_dialog_installed || return 0
-    dialog --title "ai-runner" --infobox "$message" 8 60
+    dialog_run --title "ai-runner" --infobox "$message" 8 60
     sleep 0.2
 }
 
