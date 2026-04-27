@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # SCRIPT: get.sh
-# DESCRIPTION: Download a model archive for offline reuse.
+# DESCRIPTION: Download an Ollama registry bundle or direct model archive for offline reuse.
 # USAGE: ./get.sh [-h] [-m <model>] [-u <url>] [-d <dir>] [-r <runtime>]
 # PARAMETERS:
 # -m <model>        : model name (default: current selection or prompt)
-# -u <url>          : model URL (if not in the list)
+# -u <url>          : direct model archive URL
 # -d <dir>          : directory to download the model to (default: ./models/<model>-<size>)
 # -r <runtime>      : runtime to use for fallback pull/export (local|docker)
 # -h                : show help
@@ -34,10 +34,10 @@ help() {
 Script Name: get.sh
 Usage: ./get.sh [-h] [-m <model>] [-u <url>] [-d <dir>] [-r <runtime>] [--debug] [--verbose]
 Description:
-  Download a model archive for offline reuse.
+  Download an Ollama registry bundle for a model, or a direct archive when --url is provided.
 Parameters:
   -m, --model <model>     model name (default: current selection or prompt)
-  -u, --url <url>         model URL (if not in the list)
+  -u, --url <url>         direct model archive URL
   -d, --dir <dir>         directory to download the model to (default: ./models/<model>-<size>)
   -r, --runtime <mode>    runtime to use for fallback pull/export (local|docker)
   --debug                 enable debug logging
@@ -128,8 +128,9 @@ download_ollama_registry_bundle() {
     while IFS=$'\t' read -r digest media_type size; do
         [[ -n "$digest" ]] || continue
         component_count=$((component_count + 1))
-        safe_digest="${digest/:/-}"
-        blob_output="${blobs_dir}/${safe_digest}"
+        local safe_digest="${digest/:/-}"
+        local blob_output="${blobs_dir}/${safe_digest}"
+        local blob_url
         blob_url="$(ollama_registry_blob_url "$model_name" "$digest")"
         print_info "Downloading registry blob ${component_count}: ${digest} (${media_type}, ${size} bytes)"
         if ! DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$blob_url" "$blob_output"; then
@@ -274,7 +275,7 @@ confirm_download_via_dialog() {
     check_if_dialog_installed || return 1
 
     if [[ -z "$source_url" ]]; then
-        source_url="runtime fallback only"
+        source_url="Ollama registry bundle, then runtime fallback"
     fi
 
     if dialog_run --title "Confirm download" --yesno \
@@ -373,7 +374,7 @@ if [[ -n "$model" && "$model" == *:* && -z "$size" ]]; then
     model="${model%%:*}"
 fi
 
-if [[ -z "$model" && -z "$url" ]]; then
+if [[ -z "$model" && -z "$url" ]] && has_interactive_dialog_session; then
     interactive_selection=true
     json_file="$(ollama_models_json_path "$MODEL_REPO_DIR")"
     if [[ ! -f "$json_file" ]]; then
@@ -405,10 +406,6 @@ if [[ -z "$model" && -z "$url" ]]; then
 elif [[ -z "$model" && -z "$url" ]]; then
     print_error "Non-interactive mode requires -m <model> or -u <url>."
     exit 1
-fi
-
-if [[ -z "$url" && -n "$model" ]]; then
-    url="$(ollama_registry_manifest_url "$model" "${size:-latest}")"
 fi
 
 model_ref="${model:-from-url}"

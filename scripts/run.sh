@@ -153,7 +153,7 @@ if $run_install; then
     fi
 fi
 
-if [[ -z "$model" && -z "$prompt" ]] && ! $run_install; then
+if [[ -z "$model_arg" && -z "$prompt_arg" ]] && ! $run_install; then
     if ! choose_start_action; then
         status=$?
         if [[ $status -eq 2 ]]; then
@@ -193,7 +193,7 @@ fi
 current_size="$(resolve_env_value "size" "latest" "$ENV_FILE")"
 selected_model="$current_model"
 selected_size="$current_size"
-if [[ -z "$model" && -z "$prompt" ]] && ! $run_install; then
+if [[ -z "$model_arg" && -z "$prompt_arg" ]] && ! $run_install; then
     show_model_catalog_loading_indicator "Preparing selection dialog..."
     require_model_menu_cache_file "$json_file" >/dev/null || exit "$?"
     while true; do
