@@ -223,6 +223,10 @@ ollama_update_env "$ENV_FILE" model "$selected_model"
 ollama_update_env "$ENV_FILE" size "$selected_size"
 
 if [[ -z "$prompt" ]]; then
+    if ! has_interactive_dialog_session; then
+        print_error "Non-interactive mode requires -p <prompt>."
+        exit 1
+    fi
     dialog_init
     check_if_dialog_installed
     tmpin=$(mktemp)

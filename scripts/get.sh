@@ -96,7 +96,7 @@ download_ollama_registry_bundle() {
     local component_count=0
 
     manifest_url="$(ollama_registry_manifest_url "$model_name" "$tag")"
-    manifest_tmp="$(mktemp "/tmp/ollama-manifest.XXXXXX.json")"
+    manifest_tmp="$(mktemp)"
     manifest_file="${destination_dir}/manifest.json"
     metadata_file="${destination_dir}/bundle-metadata.json"
     blobs_dir="${destination_dir}/blobs"
@@ -449,9 +449,11 @@ create_directory "$dir" >/dev/null
 print_info "Downloading model ${model_ref} from $url to $dir"
 
 safe_archive_label="$(sanitize_filename_component "$model_ref")"
-tmpfile="$(mktemp "/tmp/${safe_archive_label}.XXXXXX.tar.gz")"
+tmpfile_base="$(mktemp "/tmp/${safe_archive_label}.XXXXXX")"
+tmpfile="${tmpfile_base}.tar.gz"
+mv "$tmpfile_base" "$tmpfile"
 download_extracted=false
-if [[ -n "$model" ]]; then
+if [[ -n "$model" ]] && [[ -z "$url_arg" ]]; then
     if download_ollama_registry_bundle "$model" "${size:-latest}" "$dir"; then
         exit 0
     fi
