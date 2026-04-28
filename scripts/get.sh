@@ -137,6 +137,15 @@ download_ollama_registry_bundle() {
             print_error "Failed to download registry blob: ${digest}"
             return 1
         fi
+        if [[ "$digest" == sha256:* ]]; then
+            local expected_hash="${digest#sha256:}"
+            local actual_hash
+            actual_hash="$(sha256sum "$blob_output" | cut -d' ' -f1)"
+            if [[ "$actual_hash" != "$expected_hash" ]]; then
+                print_error "Blob digest mismatch for ${digest}: expected ${expected_hash}, got ${actual_hash}"
+                return 1
+            fi
+        fi
     done < <(jq -r '[.config] + (.layers // []) | .[] | [.digest, .mediaType, (.size|tostring)] | @tsv' "$manifest_file")
 
     print_success "Downloaded Ollama registry bundle for ${model_name}:${tag} to ${destination_dir}"
@@ -299,7 +308,6 @@ Start download now?" \
 }
 
 model_arg=""
-size_arg=""
 url_arg=""
 dir_arg=""
 runtime_override=""
@@ -365,7 +373,7 @@ fi
 runtime="$(ollama_runtime_type "$ENV_FILE" "$runtime_override")"
 
 model="$model_arg"
-size="$size_arg"
+size=""
 url="$url_arg"
 dir="$dir_arg"
 
@@ -452,10 +460,6 @@ else
     print_info "Downloading model ${model_ref} from registry bundle or runtime fallback to $dir"
 fi
 
-safe_archive_label="$(sanitize_filename_component "$model_ref")"
-tmpfile_base="$(mktemp "/tmp/${safe_archive_label}.XXXXXX")"
-tmpfile="${tmpfile_base}.tar.gz"
-mv "$tmpfile_base" "$tmpfile"
 download_extracted=false
 if [[ -n "$model" ]] && [[ -z "$url_arg" ]]; then
     if download_ollama_registry_bundle "$model" "${size:-latest}" "$dir"; then
@@ -463,6 +467,11 @@ if [[ -n "$model" ]] && [[ -z "$url_arg" ]]; then
     fi
     print_warning "Registry bundle download failed for ${model_ref}; trying fallback paths."
 fi
+
+safe_archive_label="$(sanitize_filename_component "$model_ref")"
+tmpfile_base="$(mktemp "/tmp/${safe_archive_label}.XXXXXX")"
+tmpfile="${tmpfile_base}.tar.gz"
+mv "$tmpfile_base" "$tmpfile"
 
 if [[ -z "$url" ]]; then
     print_info "No direct archive URL available; skipping direct download and using runtime fallback."

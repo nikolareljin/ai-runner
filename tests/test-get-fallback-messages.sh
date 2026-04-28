@@ -76,10 +76,14 @@ assert_contains "$local_diff" "No standalone archive was created in ./models/cus
 assert_contains "$local_diff" "running local Ollama server." "local_diff: local server availability message"
 
 if command -v script >/dev/null 2>&1; then
-    tty_probe_output="$(script -q -c "bash -lc 'source \"$PROJECT_ROOT/scripts/include.sh\"; if has_interactive_dialog_session; then printf yes >&2; else printf no >&2; fi'" /dev/null 2>/dev/null | tr -d '\r\n')"
-    if [[ "$tty_probe_output" != "yes" ]]; then
-        printf 'Expected interactive dialog session helper to allow any attached terminal fd or /dev/tty. Got: %s\n' "$tty_probe_output" >&2
-        exit 1
+    if script -q -c "printf ''" /dev/null >/dev/null 2>&1; then
+        tty_probe_output="$(script -q -c "bash -lc 'source \"$PROJECT_ROOT/scripts/include.sh\"; if has_interactive_dialog_session; then printf yes >&2; else printf no >&2; fi'" /dev/null 2>/dev/null | tr -d '\r\n')"
+        if [[ "$tty_probe_output" != "yes" ]]; then
+            printf 'Expected interactive dialog session helper to allow any attached terminal fd or /dev/tty. Got: %s\n' "$tty_probe_output" >&2
+            exit 1
+        fi
+    else
+        printf "Skipping interactive dialog session PTY probe: installed 'script' does not support the required '-q -c ... /dev/null' invocation.\n" >&2
     fi
 fi
 
