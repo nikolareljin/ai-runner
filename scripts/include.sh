@@ -75,7 +75,7 @@ has_interactive_dialog_session() {
         return 0
     fi
 
-    if [[ -r /dev/tty && -w /dev/tty ]]; then
+    if (exec 3<>/dev/tty) 2>/dev/null; then
         return 0
     fi
 

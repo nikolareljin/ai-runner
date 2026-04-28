@@ -446,7 +446,11 @@ fi
 
 create_directory "$dir" >/dev/null
 
-print_info "Downloading model ${model_ref} from $url to $dir"
+if [[ -n "$url" ]]; then
+    print_info "Downloading model ${model_ref} from direct archive URL $url to $dir"
+else
+    print_info "Downloading model ${model_ref} from registry bundle or runtime fallback to $dir"
+fi
 
 safe_archive_label="$(sanitize_filename_component "$model_ref")"
 tmpfile_base="$(mktemp "/tmp/${safe_archive_label}.XXXXXX")"
