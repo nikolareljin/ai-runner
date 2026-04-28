@@ -144,15 +144,24 @@ download_ollama_registry_bundle() {
     metadata_file="${stage_dir}/bundle-metadata.json"
     blobs_dir="${stage_dir}/blobs"
     create_directory "$blobs_dir" >/dev/null
-    mv "$manifest_tmp" "$manifest_file"
+    if ! mv "$manifest_tmp" "$manifest_file"; then
+        print_error "Failed to stage registry manifest in ${stage_dir}."
+        rm -rf "$stage_dir"
+        rm -f "$manifest_tmp"
+        return 1
+    fi
 
-    jq -n \
+    if ! jq -n \
         --arg model "$model_name" \
         --arg tag "$tag" \
         --arg manifest_url "$manifest_url" \
         --arg downloaded_at "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
         '{model:$model, tag:$tag, manifest_url:$manifest_url, downloaded_at:$downloaded_at, format:"ollama-registry-bundle"}' \
-        > "$metadata_file"
+        > "$metadata_file"; then
+        print_error "Failed to write registry bundle metadata in ${stage_dir}."
+        rm -rf "$stage_dir"
+        return 1
+    fi
 
     while IFS=$'\t' read -r digest media_type size; do
         [[ -n "$digest" ]] || continue

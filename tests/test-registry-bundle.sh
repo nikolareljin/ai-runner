@@ -144,8 +144,18 @@ if download_ollama_registry_bundle "llama3" "latest" "$protected_destination" >/
 fi
 assert_file_contains "${protected_destination}/blobs/unrelated" "keep-me" "pre-existing blobs content is preserved"
 
-run_output="$("$PROJECT_ROOT/run" </dev/null 2>&1 || true)"
-if [[ "$run_output" != *"Non-interactive mode requires -p <prompt>; provide -m <model> only if no model is configured via .env/defaults."* ]]; then
-    printf 'Expected ./run with no TTY and no args to fail before opening dialog. Got: %s\n' "$run_output" >&2
-    exit 1
+if command -v setsid >/dev/null 2>&1; then
+    run_output="$(setsid -w "$PROJECT_ROOT/run" </dev/null 2>&1 || true)"
+    if [[ "$run_output" != *"Non-interactive mode requires -p <prompt>; provide -m <model> only if no model is configured via .env/defaults."* ]]; then
+        printf 'Expected ./run with no TTY and no args to fail before opening dialog. Got: %s\n' "$run_output" >&2
+        exit 1
+    fi
+elif [[ -r /dev/tty ]]; then
+    printf 'Skipping non-interactive ./run assertion because setsid is unavailable and /dev/tty is accessible.\n' >&2
+else
+    run_output="$("$PROJECT_ROOT/run" </dev/null 2>&1 || true)"
+    if [[ "$run_output" != *"Non-interactive mode requires -p <prompt>; provide -m <model> only if no model is configured via .env/defaults."* ]]; then
+        printf 'Expected ./run with no TTY and no args to fail before opening dialog. Got: %s\n' "$run_output" >&2
+        exit 1
+    fi
 fi
