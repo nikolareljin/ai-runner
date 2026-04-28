@@ -106,14 +106,11 @@ download_ollama_registry_bundle() {
     local model_name="$1"
     local tag="$2"
     local destination_dir="$3"
-    local manifest_url manifest_tmp manifest_file metadata_file blobs_dir
+    local manifest_url manifest_tmp stage_dir manifest_file metadata_file blobs_dir
     local component_count=0
 
     manifest_url="$(ollama_registry_manifest_url "$model_name" "$tag")"
     manifest_tmp="$(mktemp)"
-    manifest_file="${destination_dir}/manifest.json"
-    metadata_file="${destination_dir}/bundle-metadata.json"
-    blobs_dir="${destination_dir}/blobs"
 
     print_info "Downloading Ollama registry manifest for ${model_name}:${tag}"
     if ! DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$manifest_url" "$manifest_tmp"; then
@@ -128,6 +125,10 @@ download_ollama_registry_bundle() {
     fi
 
     create_directory "$destination_dir" >/dev/null
+    stage_dir="$(mktemp -d "${destination_dir}/.registry-bundle.XXXXXX")"
+    manifest_file="${stage_dir}/manifest.json"
+    metadata_file="${stage_dir}/bundle-metadata.json"
+    blobs_dir="${stage_dir}/blobs"
     create_directory "$blobs_dir" >/dev/null
     mv "$manifest_tmp" "$manifest_file"
 
@@ -149,19 +150,29 @@ download_ollama_registry_bundle() {
         print_info "Downloading registry blob ${component_count}: ${digest} (${media_type}, ${size} bytes)"
         if ! DIALOG_DOWNLOAD_SHOW_ERROR_DIALOG=0 download_file "$blob_url" "$blob_output"; then
             print_error "Failed to download registry blob: ${digest}"
+            rm -rf "$stage_dir"
             return 1
         fi
         if [[ "$digest" == sha256:* ]]; then
             local expected_hash="${digest#sha256:}"
             local actual_hash
-            actual_hash="$(sha256_file "$blob_output")" || return 1
+            if ! actual_hash="$(sha256_file "$blob_output")"; then
+                rm -rf "$stage_dir"
+                return 1
+            fi
             if [[ "$actual_hash" != "$expected_hash" ]]; then
                 print_error "Blob digest mismatch for ${digest}: expected ${expected_hash}, got ${actual_hash}"
+                rm -rf "$stage_dir"
                 return 1
             fi
         fi
     done < <(jq -r '[.config] + (.layers // []) | .[] | [.digest, .mediaType, (.size|tostring)] | @tsv' "$manifest_file")
 
+    rm -rf "${destination_dir}/manifest.json" "${destination_dir}/bundle-metadata.json" "${destination_dir}/blobs"
+    mv "$manifest_file" "${destination_dir}/manifest.json"
+    mv "$metadata_file" "${destination_dir}/bundle-metadata.json"
+    mv "$blobs_dir" "${destination_dir}/blobs"
+    rmdir "$stage_dir"
     print_success "Downloaded Ollama registry bundle for ${model_name}:${tag} to ${destination_dir}"
     return 0
 }
