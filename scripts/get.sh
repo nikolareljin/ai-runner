@@ -109,6 +109,11 @@ download_ollama_registry_bundle() {
     local manifest_url manifest_tmp stage_dir manifest_file metadata_file blobs_dir
     local component_count=0
 
+    if ! command -v jq >/dev/null 2>&1; then
+        print_error "jq is required to download Ollama registry bundles."
+        return 1
+    fi
+
     manifest_url="$(ollama_registry_manifest_url "$model_name" "$tag")"
     manifest_tmp="$(mktemp)"
 
@@ -125,6 +130,12 @@ download_ollama_registry_bundle() {
     fi
 
     create_directory "$destination_dir" >/dev/null
+    if [[ -e "${destination_dir}/manifest.json" || -e "${destination_dir}/bundle-metadata.json" || -e "${destination_dir}/blobs" ]]; then
+        print_error "Refusing to overwrite existing registry bundle paths in ${destination_dir}."
+        rm -f "$manifest_tmp"
+        return 1
+    fi
+
     stage_dir="$(mktemp -d "${destination_dir}/.registry-bundle.XXXXXX")"
     manifest_file="${stage_dir}/manifest.json"
     metadata_file="${stage_dir}/bundle-metadata.json"
@@ -168,7 +179,6 @@ download_ollama_registry_bundle() {
         fi
     done < <(jq -r '[.config] + (.layers // []) | .[] | [.digest, .mediaType, (.size|tostring)] | @tsv' "$manifest_file")
 
-    rm -rf "${destination_dir}/manifest.json" "${destination_dir}/bundle-metadata.json" "${destination_dir}/blobs"
     mv "$manifest_file" "${destination_dir}/manifest.json"
     mv "$metadata_file" "${destination_dir}/bundle-metadata.json"
     mv "$blobs_dir" "${destination_dir}/blobs"
@@ -331,6 +341,10 @@ Start download now?" \
     print_error "Failed to confirm download."
     return "$status"
 }
+
+if [[ "${AI_RUNNER_GET_SOURCE_ONLY:-0}" == "1" ]]; then
+    return 0
+fi
 
 model_arg=""
 url_arg=""
