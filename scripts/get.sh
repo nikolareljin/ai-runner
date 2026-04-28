@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # SCRIPT: get.sh
 # DESCRIPTION: Download an Ollama registry bundle or direct model archive for offline reuse.
-# USAGE: ./get.sh [-h] [-m <model>] [-u <url>] [-d <dir>] [-r <runtime>]
+# USAGE: ./get.sh [-h|--help] [-m|--model <model>] [-u|--url <url>] [-d|--dir <dir>] [-r|--runtime <runtime>] [--debug] [--verbose]
 # PARAMETERS:
-# -m <model>        : model name (default: current selection or prompt)
-# -u <url>          : direct model archive URL
-# -d <dir>          : directory to download the model to (default: ./models/<model>-<size>)
-# -r <runtime>      : runtime to use for fallback pull/export (local|docker)
-# -h                : show help
+# -m, --model <model>     : model name (default: current selection or prompt)
+# -u, --url <url>         : direct model archive URL
+# -d, --dir <dir>         : directory to download the model to (default: ./models/<model>-<size>)
+# -r, --runtime <runtime> : runtime to use for fallback pull/export (local|docker)
+# --debug                 : enable debug logging
+# --verbose               : enable verbose logging
+# -h, --help              : show help
 # EXAMPLE: ./get.sh -m llama3 -d ./models -r docker
 # ----------------------------------------------------
 set -euo pipefail
@@ -107,6 +109,7 @@ download_ollama_registry_bundle() {
     local tag="$2"
     local destination_dir="$3"
     local manifest_url manifest_tmp stage_dir manifest_file metadata_file blobs_dir
+    local finalized_manifest="" finalized_metadata=""
     local component_count=0
 
     if ! command -v jq >/dev/null 2>&1; then
@@ -179,9 +182,24 @@ download_ollama_registry_bundle() {
         fi
     done < <(jq -r '[.config] + (.layers // []) | .[] | [.digest, .mediaType, (.size|tostring)] | @tsv' "$manifest_file")
 
-    mv "$manifest_file" "${destination_dir}/manifest.json"
-    mv "$metadata_file" "${destination_dir}/bundle-metadata.json"
-    mv "$blobs_dir" "${destination_dir}/blobs"
+    if ! mv "$manifest_file" "${destination_dir}/manifest.json"; then
+        rm -rf "$stage_dir"
+        return 1
+    fi
+    finalized_manifest="${destination_dir}/manifest.json"
+
+    if ! mv "$metadata_file" "${destination_dir}/bundle-metadata.json"; then
+        rm -f "$finalized_manifest"
+        rm -rf "$stage_dir"
+        return 1
+    fi
+    finalized_metadata="${destination_dir}/bundle-metadata.json"
+
+    if ! mv "$blobs_dir" "${destination_dir}/blobs"; then
+        rm -f "$finalized_manifest" "$finalized_metadata"
+        rm -rf "$stage_dir"
+        return 1
+    fi
     rmdir "$stage_dir"
     print_success "Downloaded Ollama registry bundle for ${model_name}:${tag} to ${destination_dir}"
     return 0
@@ -343,7 +361,10 @@ Start download now?" \
 }
 
 if [[ "${AI_RUNNER_GET_SOURCE_ONLY:-0}" == "1" ]]; then
-    return 0
+    if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+        return 0
+    fi
+    exit 0
 fi
 
 model_arg=""

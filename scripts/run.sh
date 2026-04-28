@@ -155,7 +155,7 @@ fi
 
 if [[ -z "$model_arg" && -z "$prompt_arg" ]] && ! $run_install; then
     if ! has_interactive_dialog_session; then
-        print_error "Non-interactive mode requires -m <model> and -p <prompt>."
+        print_error "Non-interactive mode requires -p <prompt>; provide -m <model> only if no model is configured via .env/defaults."
         exit 1
     fi
     if ! choose_start_action; then

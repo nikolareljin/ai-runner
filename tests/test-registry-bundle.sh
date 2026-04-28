@@ -50,7 +50,10 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-AI_RUNNER_GET_SOURCE_ONLY=1 source "$PROJECT_ROOT/scripts/get.sh"
+export AI_RUNNER_GET_SOURCE_ONLY=1
+# shellcheck source=../scripts/get.sh
+source "$PROJECT_ROOT/scripts/get.sh"
+unset AI_RUNNER_GET_SOURCE_ONLY
 
 assert_file_exists() {
     local path=$1
@@ -142,7 +145,7 @@ fi
 assert_file_contains "${protected_destination}/blobs/unrelated" "keep-me" "pre-existing blobs content is preserved"
 
 run_output="$("$PROJECT_ROOT/run" </dev/null 2>&1 || true)"
-if [[ "$run_output" != *"Non-interactive mode requires -m <model> and -p <prompt>."* ]]; then
+if [[ "$run_output" != *"Non-interactive mode requires -p <prompt>; provide -m <model> only if no model is configured via .env/defaults."* ]]; then
     printf 'Expected ./run with no TTY and no args to fail before opening dialog. Got: %s\n' "$run_output" >&2
     exit 1
 fi
