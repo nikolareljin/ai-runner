@@ -88,6 +88,20 @@ ollama_registry_blob_url() {
     printf 'https://registry.ollama.ai/v2/%s/blobs/%s\n' "$repo" "$digest"
 }
 
+sha256_file() {
+    local file="$1"
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$file" | cut -d' ' -f1
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$file" | cut -d' ' -f1
+    elif command -v openssl >/dev/null 2>&1; then
+        openssl dgst -sha256 "$file" | awk '{print $NF}'
+    else
+        print_error "No sha256 utility found (sha256sum, shasum, or openssl required)."
+        return 1
+    fi
+}
+
 download_ollama_registry_bundle() {
     local model_name="$1"
     local tag="$2"
@@ -140,7 +154,7 @@ download_ollama_registry_bundle() {
         if [[ "$digest" == sha256:* ]]; then
             local expected_hash="${digest#sha256:}"
             local actual_hash
-            actual_hash="$(sha256sum "$blob_output" | cut -d' ' -f1)"
+            actual_hash="$(sha256_file "$blob_output")" || return 1
             if [[ "$actual_hash" != "$expected_hash" ]]; then
                 print_error "Blob digest mismatch for ${digest}: expected ${expected_hash}, got ${actual_hash}"
                 return 1
@@ -531,13 +545,13 @@ if [[ -n "$model" ]]; then
                 exit 1
             fi
         else
+            print_info "Model ${model_ref} pulled to runtime cache successfully."
             if [[ "$runtime" == "docker" ]]; then
                 cache_dir="$(ollama_runtime_data_dir "$ENV_FILE")"
-                print_error "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             else
                 cache_dir="$(ollama_runtime_local_models_dir "$ENV_FILE")"
-                print_error "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             fi
+            print_warning "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
             exit 1
         fi
     else
