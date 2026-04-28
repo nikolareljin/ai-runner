@@ -552,7 +552,7 @@ if [[ -n "$model" ]]; then
                 cache_dir="$(ollama_runtime_local_models_dir "$ENV_FILE")"
             fi
             print_warning "$(ollama_export_unavailable_message "$runtime" "$dir" "$cache_dir")"
-            exit 1
+            exit 0
         fi
     else
         print_error "Ollama pull failed for ${model_ref} using runtime '$runtime'."
