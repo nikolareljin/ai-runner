@@ -1,12 +1,17 @@
 # CHANGELOG
 
 ## Unreleased
+- Tooling: ignore local downloaded model artifacts under `models/`.
+- Tooling: update `scripts/script-helpers` to include stabilized Ollama dialog selector behavior for TTY sessions.
+
+## [0.1.2] - 2026-03-23
 - Fix: restore fully TUI-based model selection in `./run` and `./get` with no free-form model-name entry.
 - Fix: default interactive model browsing to official un-namespaced Ollama library models, sorted alphabetically, to avoid community duplicates in the main selector.
 - Fix: keep interactive selection loops in `./run` and `./get` so cancelling the size dialog returns to model selection instead of silently reusing a prior size.
 - Fix: show a loading indicator before opening the model selector and reuse a parsed model-menu cache for up to 30 minutes to speed up reopen flows.
 - Fix: route Ollama pull progress through a dialog gauge and prevent helper status output from corrupting `.env` values.
 
+## [0.1.1] - 2026-03-16
 - Feature: add an `About` dialog to `./run` with project links plus GitHub and LinkedIn profile links.
 - Fix: keep `./run -i` bootstrap flow install-first so fresh machines do not require `dialog` before dependency setup.
 - Fix: clarify `./get` fallback success messages so the requested output directory and the actual Ollama runtime model-store path are reported separately when export is unavailable.
@@ -24,6 +29,11 @@
 - Config: introduce `ollama_scheme`, `ollama_host`, and `ollama_port`; auto-generate/sync `ollama_url` from these fields in scripts.
 - Config: add shared model-store controls (`ollama_shared_model_store`, `ollama_local_models_dir`) to reuse pulled models across local and Docker runtimes.
 - Docs: update README and command docs for runtime selection, model sharing, and new env structure.
+
+## [0.1.0] - 2026-02-04
+- Feature: release the improved TUI setup and run flow from PR #10.
+- Tooling: update `scripts/setup-deps.sh`, `example.sh`, CI helper wiring, and the `scripts/script-helpers` submodule.
+- Fix: gate dependency setup and pin CI helper usage for the release workflow.
 
 ## 2025-12-30
 - Refactor: move root scripts into `scripts/` and keep entrypoint symlinks (`run`, `get`, `prompt`) at repo root.
