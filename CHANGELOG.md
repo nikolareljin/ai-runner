@@ -1,8 +1,17 @@
 # CHANGELOG
 
-## Unreleased
+## [0.1.4] - Unreleased
 - Tooling: ignore local downloaded model artifacts under `models/`.
 - Tooling: update `scripts/script-helpers` to include stabilized Ollama dialog selector behavior for TTY sessions.
+
+## [0.1.3] - 2026-04-28
+- Feature: add Ollama registry bundle download support in `./get`, including manifest/blob staging and digest verification.
+- Fix: restore interactive model selection in `./run` and `./get` after the selector flow regressed.
+- Fix: make `./get` fallback handling explicit when export is unavailable, including clearer success and failure messaging.
+- Fix: harden non-interactive prompt/model guards so scripted runs fail clearly instead of opening dialogs.
+- Fix: make registry bundle staging, finalization, and temporary-file handling safer across failure paths.
+- CI: tighten release tag detection and switch to the shared ci-helpers auto-tag workflow.
+- Tooling: add portable registry bundle tests and shell probes for the download flow.
 
 ## [0.1.2] - 2026-03-23
 - Fix: restore fully TUI-based model selection in `./run` and `./get` with no free-form model-name entry.
