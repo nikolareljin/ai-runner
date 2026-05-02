@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ## [0.1.4] - Unreleased
+- Fix: restore model selectors in `./run` and `./get` by preventing `.env` values from clobbering CLI selection state before the dialog flow starts.
+- Fix: make `./get` prompt for model, size, destination, and confirmation before downloading, while showing a meaningful archive label instead of a temporary filename in the progress dialog.
+- Fix: render selector dialogs through `/dev/tty` so interactive `dialog` menus remain visible when command stdout is captured or wrapped.
+- Fix: support explicit long options in `./get` (`--model`, `--url`, `--dir`, `--runtime`, `--debug`, `--verbose`) without colliding with `-d <dir>`.
+- Fix: make `./get` download real Ollama registry bundles (`manifest.json` plus blobs) directly, so official models can still be saved to a chosen directory even when `ollama export` is unavailable in the installed CLI.
+- CI: harden auto-tagging workflow permissions by explicitly requesting `pull-requests: read` while delegating to the reusable workflow.
 - Tooling: ignore local downloaded model artifacts under `models/`.
 - Tooling: update `scripts/script-helpers` to include stabilized Ollama dialog selector behavior for TTY sessions.
 

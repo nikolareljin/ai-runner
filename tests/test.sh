@@ -21,6 +21,7 @@ Options:
 Current coverage:
   - tests/test-chat-completions.sh
   - tests/test-get-fallback-messages.sh
+  - tests/test-registry-bundle.sh
 EOF
 }
 
@@ -54,4 +55,5 @@ cd "$PROJECT_ROOT"
 printf 'Running shell smoke tests...\n'
 bash "$SCRIPT_DIR/test-chat-completions.sh"
 bash "$SCRIPT_DIR/test-get-fallback-messages.sh"
+bash "$SCRIPT_DIR/test-registry-bundle.sh"
 printf 'Shell smoke tests completed.\n'
