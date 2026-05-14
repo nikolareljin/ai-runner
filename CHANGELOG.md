@@ -1,19 +1,32 @@
 # CHANGELOG
 
-## Unreleased
+## [0.1.4] - Unreleased
 - Fix: restore model selectors in `./run` and `./get` by preventing `.env` values from clobbering CLI selection state before the dialog flow starts.
 - Fix: make `./get` prompt for model, size, destination, and confirmation before downloading, while showing a meaningful archive label instead of a temporary filename in the progress dialog.
 - Fix: render selector dialogs through `/dev/tty` so interactive `dialog` menus remain visible when command stdout is captured or wrapped.
 - Fix: support explicit long options in `./get` (`--model`, `--url`, `--dir`, `--runtime`, `--debug`, `--verbose`) without colliding with `-d <dir>`.
 - Fix: make `./get` download real Ollama registry bundles (`manifest.json` plus blobs) directly, so official models can still be saved to a chosen directory even when `ollama export` is unavailable in the installed CLI.
 - CI: harden auto-tagging workflow permissions by explicitly requesting `pull-requests: read` while delegating to the reusable workflow.
+- Tooling: ignore local downloaded model artifacts under `models/`.
+- Tooling: update `scripts/script-helpers` to include stabilized Ollama dialog selector behavior for TTY sessions.
 
+## [0.1.3] - 2026-04-28
+- Feature: add Ollama registry bundle download support in `./get`, including manifest/blob staging and digest verification.
+- Fix: restore interactive model selection in `./run` and `./get` after the selector flow regressed.
+- Fix: make `./get` fallback handling explicit when export is unavailable, including clearer success and failure messaging.
+- Fix: harden non-interactive prompt/model guards so scripted runs fail clearly instead of opening dialogs.
+- Fix: make registry bundle staging, finalization, and temporary-file handling safer across failure paths.
+- CI: tighten release tag detection and switch to the shared ci-helpers auto-tag workflow.
+- Tooling: add portable registry bundle tests and shell probes for the download flow.
+
+## [0.1.2] - 2026-03-23
 - Fix: restore fully TUI-based model selection in `./run` and `./get` with no free-form model-name entry.
 - Fix: default interactive model browsing to official un-namespaced Ollama library models, sorted alphabetically, to avoid community duplicates in the main selector.
 - Fix: keep interactive selection loops in `./run` and `./get` so cancelling the size dialog returns to model selection instead of silently reusing a prior size.
 - Fix: show a loading indicator before opening the model selector and reuse a parsed model-menu cache for up to 30 minutes to speed up reopen flows.
 - Fix: route Ollama pull progress through a dialog gauge and prevent helper status output from corrupting `.env` values.
 
+## [0.1.1] - 2026-03-16
 - Feature: add an `About` dialog to `./run` with project links plus GitHub and LinkedIn profile links.
 - Fix: keep `./run -i` bootstrap flow install-first so fresh machines do not require `dialog` before dependency setup.
 - Fix: clarify `./get` fallback success messages so the requested output directory and the actual Ollama runtime model-store path are reported separately when export is unavailable.
@@ -31,6 +44,11 @@
 - Config: introduce `ollama_scheme`, `ollama_host`, and `ollama_port`; auto-generate/sync `ollama_url` from these fields in scripts.
 - Config: add shared model-store controls (`ollama_shared_model_store`, `ollama_local_models_dir`) to reuse pulled models across local and Docker runtimes.
 - Docs: update README and command docs for runtime selection, model sharing, and new env structure.
+
+## [0.1.0] - 2026-02-04
+- Feature: release the improved TUI setup and run flow from PR #10.
+- Tooling: update `scripts/setup-deps.sh`, `example.sh`, CI helper wiring, and the `scripts/script-helpers` submodule.
+- Fix: gate dependency setup and pin CI helper usage for the release workflow.
 
 ## 2025-12-30
 - Refactor: move root scripts into `scripts/` and keep entrypoint symlinks (`run`, `get`, `prompt`) at repo root.
