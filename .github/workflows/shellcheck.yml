@@ -7,7 +7,15 @@ on:
 
 jobs:
   shellcheck:
-    uses: nikolareljin/ci-helpers/.github/workflows/ci.yml@0.6.1
+    # @production, like auto-tag-release.yml in this repository already
+    # uses. The pin sat at 0.6.1 while the shared workflows moved on, so this
+    # job has been running a version from long before the timeout bounds, the
+    # Node 24 opt-in and the concurrency fixes -- none of which it was opting
+    # out of deliberately.
+    #
+    # Safe to move: lint_command is still accepted, and every other command
+    # input defaults to empty, so nothing new starts running.
+    uses: nikolareljin/ci-helpers/.github/workflows/ci.yml@production
     with:
       lint_command: |
         sudo apt clean
