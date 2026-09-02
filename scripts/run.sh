@@ -50,7 +50,7 @@ show_about_dialog() {
 
 Projects
 AgentVault: https://github.com/nikolareljin/agentvault
-burn-iso:   https://github.com/nikolareljin/burn-iso
+IsoForge:   https://github.com/nikolareljin/iso-forge
 
 Author profiles
 GitHub: https://github.com/nikolareljin

@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Unreleased
+- Docs: `burn-iso` was renamed to `iso-forge` on GitHub. The About dialog and the tool-suite Pages links now name the new repository, using the product name `IsoForge` alongside `AgentVault`. The tool itself, `isoforge`, is unchanged.
+
 ## [0.1.5] - 2026-08-21
 - Fix: point `scripts/script-helpers` at the published `0.22.0` tag. Tags `0.1.3` and `0.1.4` recorded commit `c11b42a`, which does not exist in `script-helpers` and is unknown to GitHub, so `git clone --recurse-submodules` failed for anyone installing from a release: `upload-pack: not our ref c11b42a`. The commit was never merged into any surviving ref, so there is nothing to restore; the pin now tracks a published tag rather than whatever the working tree happened to hold.
 - CI: check out submodules on every pull request. Nothing in CI touched them, which is why a pin that no consumer could fetch stayed in place from April to August.
