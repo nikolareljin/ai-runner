@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Docs: vellum (Markdown viewer for the terminal) joins the tool suite links on the site.
 - Docs: `burn-iso` was renamed to `iso-forge` on GitHub. The About dialog and the tool-suite Pages links now name the new repository, using the product name `IsoForge` alongside `AgentVault`. The tool itself, `isoforge`, is unchanged.
 
 ## [0.1.5] - 2026-08-21
